@@ -2,7 +2,7 @@
  *  CtcBox class
  * ----------------------------------------------------------------------------
  * 	\date       2020
- *  \authors  	Victor Reyes
+ *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 #include "tubex_CtcCidSlicing.h"
 

@@ -2,7 +2,7 @@
  *  CtcCidSlicing class
  * ----------------------------------------------------------------------------
  * 	\date       2020
- *  \authors  	Victor Reyes
+ *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 
 #ifndef __TUBEX_CTCCIDSLICING_H__
