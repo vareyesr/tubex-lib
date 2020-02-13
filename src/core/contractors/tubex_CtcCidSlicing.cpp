@@ -4,6 +4,7 @@
  * 	\date       2020
  *  \authors  	Victor Reyes, Gilles Trombettoni
  */
+
 #include "tubex_CtcCidSlicing.h"
 
 using namespace std;
@@ -13,17 +14,23 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcCidSlicing::CtcCidSlicing(int scid, double prec, ibex::Function *fnc): scid(scid), prec(prec), fnc(fnc){
+	CtcCidSlicing::CtcCidSlicing(ibex::Fnc& fnc,int scid, double prec): fnc(fnc), scid(scid), prec(prec){
 		/*check inputs*/
 		assert(scid > 0.);
 		assert(prec >= 0);
 	}
 
-	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, int cid_gate){
+	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, int cid_gate, bool m_report){
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
 		assert(TubeVector::same_slicing(x, v));
+
+		double old_volume = x.volume();
+
+		/*cpu time measurement*/
+		clock_t tStart = clock();
+
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
@@ -75,7 +82,7 @@ namespace tubex
 						{
 							sx = aux_slice_x.codomain();
 							ctc_deriv.contract(aux_slice_x, aux_slice_v);
-							ctc_fwdbwd_slices(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 						} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
 
 
@@ -112,12 +119,13 @@ namespace tubex
 				}
 			}
 		}
+		if (m_report)
+			report(tStart,x,old_volume);
 	}
 
 
-	void CtcCidSlicing::ctc_fwdbwd_slices(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
+	void CtcCidSlicing::ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
-
 		/*envelope*/
 		IntervalVector envelope(x_slice.size());
 
@@ -127,7 +135,7 @@ namespace tubex
 			else
 				envelope[i] = x_slice[i]->codomain();
 		}
-			v.set_envelope(fnc->eval_vector(envelope)[pos]);
+			v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
 	double CtcCidSlicing::get_scid(){
@@ -162,6 +170,33 @@ namespace tubex
 			for (int i = 0 ; i < get_scid() ;i++){
 				x_slices.push_back(Interval(x_slice.codomain().lb()+i*size_interval,x_slice.codomain().lb()+size_interval*(i+1)));
 			}
+		}
+	}
+
+	void CtcCidSlicing::report(clock_t tStart,TubeVector& x,double old_volume){
+
+		cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
+		/*CidSlicing does nothing, */
+		if (old_volume == x.volume()){
+			cout << "\033[1;31mNo contraction made by CidSlicing!\033[0m\n";
+			printf("CPU Time spent by CidSlicing: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+		}
+		/*CidSlicing contracts the tube*/
+		else{
+			double doors_size = 0 ;
+			int nb_doors = 0;
+			for (int i = 0 ; i < x.size() ; i++){
+				Slice* x_slice = x[i].first_slice();
+				for (int j = 0 ; j < x[i].nb_slices() ; j++){
+					doors_size +=x_slice->output_gate().diam();
+					nb_doors++;
+				}
+			}
+			cout << "\033[1;31mContraction successful!\033[0m\n";
+			printf("CPU Time spent by CidSlicing: %.3f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+			printf("Old Volume: %.4f\n", old_volume);
+			printf("New Volume: %.4f\n", x.volume());
+			printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
 		}
 	}
 

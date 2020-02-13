@@ -13,6 +13,7 @@
 #include "ibex_Function.h"
 #include "tubex_CtcDeriv.h"
 #include <vector>
+#include <time.h>
 
 
 
@@ -30,18 +31,18 @@ enum {input_gate, output_gate, codomain};
 		 * defined by the variable $s_{cid}$). Then two contractors are applied: $C_{Deriv}$
 		 * and C_{fwd}.
 		 * After all the s_cid are treated, the Hull is applied and intersected with the
-		 * corresponding slice.
+		 * corresponding slice. By default it uses scid=8 and prec=1e-7
 		 */
-		CtcCidSlicing(int scid, double prec, ibex::Function *fnc);
+		CtcCidSlicing(ibex::Fnc& fnc,int scid=8, double prec=1e-7);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, int cid_gate=input_gate);
+		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, int cid_gate=input_gate,bool report=true);
 		/*
 		 * ctc_fwd_slices manages to make an evaluation of the current Slice in order to contract and update v
 		 */
-		void ctc_fwdbwd_slices(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		void ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 		/*
 		 * used to obtain the number of scid subslices.
 		 */
@@ -63,10 +64,12 @@ enum {input_gate, output_gate, codomain};
 		 */
 		void change_prec(double prec);
 
+		void report(clock_t tStart,TubeVector& x, double old_volume);
+
 	private:
 		int scid;
 		double prec;
-		ibex::Function *fnc;
+		ibex::Fnc& fnc;
 	};
 }
 
