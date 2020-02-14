@@ -40,7 +40,6 @@ namespace tubex
 		}
 
 		/*Defining the sub-contractor Ctc_Derive*/
-		/*todo: define these as input?*/
 		CtcDeriv ctc_deriv;
 
 		/*for each tube, go all over the slices*/
@@ -52,8 +51,9 @@ namespace tubex
 				for (int i = 0 ; i < x.size() ; i++){
 					std::vector<ibex::Interval> x_subslices;
 					x_subslices.clear();
-					/*create the slices*/
-					create_slices(*x_slice[i],x_subslices, cid_gate);
+
+					/*create the sub-slices*/
+					create_subslices(*x_slice[i],x_subslices, cid_gate);
 
 					/*For each slice on $t$ compute the corresponding the hull */
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
@@ -92,8 +92,8 @@ namespace tubex
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
 					}
 					double aux_envelope = x_slice[i]->codomain().diam();
-					/*Replacing the old domains with the new ones*/
 
+					/*Replacing the old domains with the new ones*/
 					x_slice[i]->set_envelope(hull_codomain_x); v_slice[i]->set_envelope(hull_codomain_v);
 					x_slice[i]->set_input_gate(hull_input_x); v_slice[i]->set_input_gate(hull_input_v);
 					x_slice[i]->set_output_gate(hull_output_x); v_slice[i]->set_output_gate(hull_output_v);
@@ -128,14 +128,13 @@ namespace tubex
 	{
 		/*envelope*/
 		IntervalVector envelope(x_slice.size());
-
 		for (int i = 0 ; i < x_slice.size() ; i++){
 			if (i==pos)
 				envelope[i] = x.codomain();
 			else
 				envelope[i] = x_slice[i]->codomain();
 		}
-			v.set_envelope(fnc.eval_vector(envelope)[pos]);
+		v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
 	double CtcCidSlicing::get_scid(){
@@ -146,7 +145,7 @@ namespace tubex
 		return this->prec;
 	}
 
-	void CtcCidSlicing::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, int cid_gate){
+	void CtcCidSlicing::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, int cid_gate){
 
 		/*Varcid in the input gate*/
 		if (cid_gate== input_gate){
