@@ -20,7 +20,7 @@ namespace tubex
 		assert(prec >= 0);
 	}
 
-	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, int cid_gate, bool m_report){
+	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report){
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
@@ -53,7 +53,7 @@ namespace tubex
 					x_subslices.clear();
 
 					/*create the sub-slices*/
-					create_subslices(*x_slice[i],x_subslices, cid_gate);
+					create_subslices(*x_slice[i],x_subslices, t_propa);
 
 					/*For each slice on $t$ compute the corresponding the hull */
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
@@ -66,15 +66,12 @@ namespace tubex
 						Slice aux_slice_x(*x_slice[i]);
 						Slice aux_slice_v(*v_slice[i]);
 //
-						if (cid_gate == input_gate){
+						if (t_propa & FORWARD)
 							aux_slice_x.set_input_gate(x_subslices[j]);
-						}
-						else if (cid_gate == output_gate){
+
+						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
-						}
-						else if (cid_gate == codomain){
-							aux_slice_x.set_envelope(x_subslices[j]);
-						}
+
 
 						/*Fixpoint for each sub-slice at each tube*/
 						Interval sx;
@@ -145,10 +142,10 @@ namespace tubex
 		return this->prec;
 	}
 
-	void CtcCidSlicing::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, int cid_gate){
+	void CtcCidSlicing::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa){
 
 		/*Varcid in the input gate*/
-		if (cid_gate== input_gate){
+		if (t_propa & FORWARD){
 			double size_interval = x_slice.input_gate().diam()/get_scid();
 			for (int i = 0 ; i < get_scid() ;i++){
 				x_slices.push_back(Interval(x_slice.input_gate().lb()+i*size_interval,x_slice.input_gate().lb()+size_interval*(i+1)));
@@ -156,18 +153,10 @@ namespace tubex
 		}
 
 		/*Varcid in the output gate*/
-		else if (cid_gate == output_gate){
+		else if (t_propa & BACKWARD){
 			double size_interval = x_slice.output_gate().diam()/get_scid();
 			for (int i = 0 ; i < get_scid() ;i++){
 				x_slices.push_back(Interval(x_slice.output_gate().lb()+i*size_interval,x_slice.output_gate().lb()+size_interval*(i+1)));
-			}
-		}
-
-		/*Varcid in the codomain*/
-		else if (cid_gate == codomain){
-			double size_interval = x_slice.codomain().diam()/get_scid();
-			for (int i = 0 ; i < get_scid() ;i++){
-				x_slices.push_back(Interval(x_slice.codomain().lb()+i*size_interval,x_slice.codomain().lb()+size_interval*(i+1)));
 			}
 		}
 	}
@@ -191,10 +180,10 @@ namespace tubex
 					nb_doors++;
 				}
 			}
-			cout << "\033[1;31mContraction successful!\033[0m\n";
+			cout << "\033[1;31mContraction successful!  -  CidSlicing\033[0m\n";
 			printf("CPU Time spent by CidSlicing: %.3f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-			printf("Old Volume: %.4f\n", old_volume);
-			printf("New Volume: %.4f\n", x.volume());
+			printf("Old Volume: %.7f\n", old_volume);
+			printf("New Volume: %.7f\n", x.volume());
 			printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
 		}
 	}

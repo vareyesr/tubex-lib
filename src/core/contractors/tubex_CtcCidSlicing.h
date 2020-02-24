@@ -36,7 +36,7 @@ enum {input_gate, output_gate, codomain};
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, int cid_gate=input_gate,bool report=false);
+		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
 		/*
 		 * ctc_fwd_slices manages to make an evaluation of the current Slice in order to contract and update v
 		 */
@@ -52,7 +52,7 @@ enum {input_gate, output_gate, codomain};
 		/*
 		 * creates a certain number of subslices to be treated
 		 */
-		void create_subslices(Slice & x_slice, std::vector<ibex::Interval> & slices, int cid_gate);
+		void create_subslices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
 		/*
 		 * changes the value of scid
 		 */
