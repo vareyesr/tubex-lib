@@ -388,6 +388,7 @@ namespace tubex
 					for (int j = 0 ; j < x[i].nb_slices() ; j++){
 						doors_size +=x_slice->output_gate().diam();
 						nb_doors++;
+						x_slice = x_slice->next_slice();
 					}
 				}
 				cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";

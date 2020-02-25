@@ -34,9 +34,17 @@ namespace tubex
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
-		for (int i = 0 ; i < x.size() ; i++){
-			x_slice.push_back(x[i].first_slice());
-			v_slice.push_back(v[i].first_slice());
+		if (t_propa & FORWARD){
+			for (int i = 0 ; i < x.size() ; i++){
+				x_slice.push_back(x[i].first_slice());
+				v_slice.push_back(v[i].first_slice());
+			}
+		}
+		else if (t_propa & BACKWARD){
+			for (int i = 0 ; i < x.size() ; i++){
+				x_slice.push_back(x[i].last_slice());
+				v_slice.push_back(v[i].last_slice());
+			}
 		}
 
 		/*Defining the sub-contractor Ctc_Derive*/
@@ -72,13 +80,12 @@ namespace tubex
 						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
 
-
 						/*Fixpoint for each sub-slice at each tube*/
 						Interval sx;
 						do
 						{
 							sx = aux_slice_x.codomain();
-							ctc_deriv.contract(aux_slice_x, aux_slice_v);
+							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 						} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
 
@@ -178,6 +185,7 @@ namespace tubex
 				for (int j = 0 ; j < x[i].nb_slices() ; j++){
 					doors_size +=x_slice->output_gate().diam();
 					nb_doors++;
+					x_slice = x_slice->next_slice();
 				}
 			}
 			cout << "\033[1;31mContraction successful!  -  CidSlicing\033[0m\n";

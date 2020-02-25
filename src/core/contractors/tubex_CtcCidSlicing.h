@@ -36,7 +36,7 @@ enum {input_gate, output_gate, codomain};
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
+		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool report=false);
 		/*
 		 * ctc_fwd_slices manages to make an evaluation of the current Slice in order to contract and update v
 		 */
