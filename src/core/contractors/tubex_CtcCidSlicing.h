@@ -17,11 +17,10 @@
 
 namespace tubex
 {
-enum {input_gate, output_gate, codomain};
+
 	class CtcCidSlicing : public Ctc{
 
 	public:
-
 		/*
 		 * CtcCidSlicing correspond to a generic contractor applied at the Slice level. It is based
 		 * on the famous Cid-consistency used in continuous domains. It divides one slice
@@ -31,7 +30,7 @@ enum {input_gate, output_gate, codomain};
 		 * After all the s_cid are treated, the Hull is applied and intersected with the
 		 * corresponding slice. By default it uses scid=8 and prec=1e-7
 		 */
-		CtcCidSlicing(ibex::Fnc& fnc,int scid=8, double prec=1e-7);
+		CtcCidSlicing(ibex::Fnc& fnc,int scid=8, double prec=0.);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.

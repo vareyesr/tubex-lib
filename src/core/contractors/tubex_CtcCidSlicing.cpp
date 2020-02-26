@@ -34,6 +34,7 @@ namespace tubex
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
+
 		if (t_propa & FORWARD){
 			for (int i = 0 ; i < x.size() ; i++){
 				x_slice.push_back(x[i].first_slice());
@@ -73,22 +74,22 @@ namespace tubex
 						/*Temporal slices on $x$ and $v$*/
 						Slice aux_slice_x(*x_slice[i]);
 						Slice aux_slice_v(*v_slice[i]);
-//
+
 						if (t_propa & FORWARD)
 							aux_slice_x.set_input_gate(x_subslices[j]);
-
 						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
 
 						/*Fixpoint for each sub-slice at each tube*/
-						Interval sx;
+						double sx;
+//						ctc_deriv.set_fast_mode(true);
 						do
 						{
-							sx = aux_slice_x.codomain();
+							sx = aux_slice_x.volume();
 							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
-						} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
 
+						} while(sx-aux_slice_x.volume()>get_prec());
 
 						/*The union of the current Slice is made.*/
 						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
@@ -161,6 +162,8 @@ namespace tubex
 
 		/*Varcid in the output gate*/
 		else if (t_propa & BACKWARD){
+//			x_slices.push_back(Interval(x_slice.output_gate().lb()));
+//			x_slices.push_back(Interval(x_slice.output_gate().ub()));
 			double size_interval = x_slice.output_gate().diam()/get_scid();
 			for (int i = 0 ; i < get_scid() ;i++){
 				x_slices.push_back(Interval(x_slice.output_gate().lb()+i*size_interval,x_slice.output_gate().lb()+size_interval*(i+1)));

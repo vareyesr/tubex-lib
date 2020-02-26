@@ -15,16 +15,17 @@
 #include <vector>
 #include <time.h>
 
+
 namespace tubex
 {
 	class Ctc3BGuess : public Ctc{
 		enum {lb,ub};
-		enum {input_gate, output_gate, codomain};
+
 	public:
 
 		Ctc3BGuess(ibex::Fnc& fnc,int bisections=20, double prec=1e-7);
 
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, int cid_gate=input_gate, bool report=true);
+		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
 
 		void ctc_fwdbwd_slices(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 
@@ -32,7 +33,7 @@ namespace tubex
 
 		double get_prec();
 
-		void create_slices(Slice & x_slice, std::vector<ibex::Interval> & slices, int cid_gate);
+		void create_slices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
 
 		void change_bisections(int bisections);
 

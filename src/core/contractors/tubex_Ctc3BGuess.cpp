@@ -18,7 +18,7 @@ namespace tubex
 		assert(prec >= 0);
 	}
 
-	void Ctc3BGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, int cid_gate, bool m_report){
+	void Ctc3BGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report){
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
@@ -31,10 +31,16 @@ namespace tubex
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
-		for (int i = 0 ; i < x.size() ; i++){
-			x_slice.push_back(x[i].first_slice());
-			v_slice.push_back(v[i].first_slice());
-		}
+		if (t_propa & FORWARD)
+			for (int i = 0 ; i < x.size() ; i++){
+				x_slice.push_back(x[i].first_slice());
+				v_slice.push_back(v[i].first_slice());
+			}
+		else if (t_propa & BACKWARD)
+			for (int i = 0 ; i < x.size() ; i++){
+				x_slice.push_back(x[i].last_slice());
+				v_slice.push_back(v[i].last_slice());
+			}
 
 		/*Defining the sub-contractor Ctc_Derive*/
 		/*todo: define these as input?*/
@@ -49,7 +55,7 @@ namespace tubex
 					std::vector<ibex::Interval> x_subslices;
 					x_subslices.clear();
 					/*create the slices*/
-					create_slices(*x_slice[i],x_subslices, cid_gate);
+					create_slices(*x_slice[i],x_subslices, t_propa);
 
 					/*For each slice on $t$ compute the corresponding the hull */
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
@@ -63,18 +69,16 @@ namespace tubex
 						Slice aux_slice_x(*x_slice[i]);
 						Slice aux_slice_v(*v_slice[i]);
 //
-						if (cid_gate == input_gate){
+						if (t_propa & FORWARD)
 							aux_slice_x.set_input_gate(x_subslices[j]);
-						}
-						else if (cid_gate == output_gate){
+
+						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
-						}
-						else if (cid_gate == codomain){
-							aux_slice_x.set_envelope(x_subslices[j]);
-						}
+
 
 						/*Fixpoint for each sub-slice at each tube*/
 						Interval sx;
+//						ctc_deriv.set_fast_mode(true);
 						do
 						{
 							sx = aux_slice_x.codomain();
@@ -189,10 +193,10 @@ namespace tubex
 		return this->prec;
 	}
 
-	void Ctc3BGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, int cid_gate){
+	void Ctc3BGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa){
 
 		/*Varcid in the input gate*/
-		if (cid_gate== input_gate){
+		if (t_propa & FORWARD){
 			if (x_slice.input_gate().diam() == 0)
 				x_slices.push_back(Interval(x_slice.input_gate().ub()));
 			else{
@@ -202,22 +206,12 @@ namespace tubex
 		}
 
 		/*Varcid in the output gate*/
-		else if (cid_gate == output_gate){
+		else if (t_propa & BACKWARD){
 			if (x_slice.output_gate().diam() == 0)
 				x_slices.push_back(Interval(x_slice.output_gate().ub()));
 			else{
 				x_slices.push_back(Interval(x_slice.output_gate().lb()));
 				x_slices.push_back(Interval(x_slice.output_gate().ub()));
-			}
-		}
-
-		/*Varcid in the codomain*/
-		else if (cid_gate == codomain){
-			if (x_slice.codomain().diam() == 0)
-				x_slices.push_back(Interval(x_slice.codomain().ub()));
-			else{
-				x_slices.push_back(Interval(x_slice.codomain().lb()));
-				x_slices.push_back(Interval(x_slice.codomain().ub()));
 			}
 		}
 	}
