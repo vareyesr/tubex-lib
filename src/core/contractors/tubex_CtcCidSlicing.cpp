@@ -11,16 +11,17 @@ using namespace std;
 using namespace ibex;
 
 
-
 namespace tubex
 {
-	CtcCidSlicing::CtcCidSlicing(ibex::Fnc& fnc,int scid, double prec): fnc(fnc), scid(scid), prec(prec){
+	CtcCidSlicing::CtcCidSlicing(ibex::Fnc& fnc,int scid, double prec): fnc(fnc), scid(scid), prec(prec)
+	{
 		/*check inputs*/
 		assert(scid > 0.);
 		assert(prec >= 0);
 	}
 
-	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report){
+	void CtcCidSlicing::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report)
+	{
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
@@ -50,11 +51,12 @@ namespace tubex
 
 		/*Defining the sub-contractor Ctc_Derive*/
 		CtcDeriv ctc_deriv;
-
+		int no_contraction = 0 ;
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 			/*iteration step, made for each subslice at each tube x*/
 			bool fix_point_n;
+			bool first_iteration = true;
 			do{
 				fix_point_n=false;
 				for (int i = 0 ; i < x.size() ; i++){
@@ -69,6 +71,7 @@ namespace tubex
 					Interval hull_output_x = Interval::EMPTY_SET; Interval hull_output_v = Interval::EMPTY_SET;
 					Interval hull_codomain_x = Interval::EMPTY_SET; Interval hull_codomain_v = Interval::EMPTY_SET;
 
+
 					for (int j = 0 ; j < x_subslices.size() ; j++){
 
 						/*Temporal slices on $x$ and $v$*/
@@ -82,6 +85,7 @@ namespace tubex
 
 						/*Fixpoint for each sub-slice at each tube*/
 						double sx;
+						/*without polygons*/
 //						ctc_deriv.set_fast_mode(true);
 						do
 						{
@@ -105,12 +109,18 @@ namespace tubex
 
 					if (aux_envelope > x_slice[i]->codomain().diam())
 						fix_point_n = true;
+					if ((first_iteration) && !(fix_point_n))
+						return;
+
+					first_iteration= false;
 				}
 				/*is not necessary for 1-dimensional problems*/
 				if (x.size() == 1)
 					fix_point_n=false;
 			} while(fix_point_n);
 
+
+			/*continue with the next slice*/
 			if (t_propa & FORWARD){
 				for (int i = 0 ; i < x.size() ; i++){
 					x_slice[i] = x_slice[i]->next_slice();
@@ -142,16 +152,28 @@ namespace tubex
 		v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
-	double CtcCidSlicing::get_scid(){
+	double CtcCidSlicing::get_scid()
+	{
 		return this->scid;
 	}
 
-	double CtcCidSlicing::get_prec(){
+	double CtcCidSlicing::get_prec()
+	{
 		return this->prec;
 	}
 
-	void CtcCidSlicing::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa){
+	void CtcCidSlicing::set_scid(int scid)
+	{
+		this->scid = scid;
+	}
 
+	void CtcCidSlicing::set_prec(double prec)
+	{
+		this->prec = prec;
+	}
+
+	void CtcCidSlicing::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)
+	{
 		/*Varcid in the input gate*/
 		if (t_propa & FORWARD){
 			double size_interval = x_slice.input_gate().diam()/get_scid();
@@ -171,7 +193,8 @@ namespace tubex
 		}
 	}
 
-	void CtcCidSlicing::report(clock_t tStart,TubeVector& x,double old_volume){
+	void CtcCidSlicing::report(clock_t tStart,TubeVector& x,double old_volume)
+	{
 
 		cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
 		/*CidSlicing does nothing, */
@@ -197,14 +220,6 @@ namespace tubex
 			printf("New Volume: %.7f\n", x.volume());
 			printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
 		}
-	}
-
-	void CtcCidSlicing::change_scid(int scid){
-		this->scid = scid;
-	}
-
-	void CtcCidSlicing::change_prec(double prec){
-		this->prec = prec;
 	}
 }
 

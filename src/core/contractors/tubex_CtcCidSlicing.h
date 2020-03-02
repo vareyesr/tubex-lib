@@ -49,17 +49,17 @@ namespace tubex
 		 */
 		double get_prec();
 		/*
-		 * creates a certain number of subslices to be treated
-		 */
-		void create_subslices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
-		/*
 		 * changes the value of scid
 		 */
-		void change_scid(int scid);
+		void set_scid(int scid);
 		/*
 		 * changes the value of the precision
 		 */
-		void change_prec(double prec);
+		void set_prec(double prec);
+		/*
+		 * creates a certain number of subslices to be treated
+		 */
+		void create_subslices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
 
 		void report(clock_t tStart,TubeVector& x, double old_volume);
 
