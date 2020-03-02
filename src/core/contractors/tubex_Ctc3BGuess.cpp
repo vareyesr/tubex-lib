@@ -13,12 +13,15 @@ using namespace ibex;
 
 namespace tubex
 {
-	Ctc3BGuess::Ctc3BGuess(ibex::Fnc& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec){
-		assert(bisections > 0.);
+	Ctc3BGuess::Ctc3BGuess(ibex::Fnc& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec)
+	{
+		assert(bisections >= 0.);
 		assert(prec >= 0);
 	}
 
-	void Ctc3BGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report){
+	/*todo: fixpoint not obtained, more than one call needed*/
+	void Ctc3BGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report)
+	{
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
@@ -43,114 +46,96 @@ namespace tubex
 			}
 
 		/*Defining the sub-contractor Ctc_Derive*/
-		/*todo: define these as input?*/
 		CtcDeriv ctc_deriv;
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
-			/*iteration step, made for each subslice at each tube x*/
 			bool fix_point_n;
+
+			/*with the bounds of each variable compute the impact on the output door*/
+			vector<Slice> x_slice_bounds;
+			vector<Slice> v_slice_bounds;
+			x_slice_bounds.clear(); v_slice_bounds.clear();
+			for (int i = 0 ; i < x.size() ; i++){
+				x_slice_bounds.push_back(*x_slice[i]);
+				v_slice_bounds.push_back(*v_slice[i]);
+			}
+
 			do{
-				fix_point_n=false;
-				for (int i = 0 ; i < x.size() ; i++){
+				fix_point_n = false;
+				/*work for each dimension*/
+				for (int i = 0 ; i < x.size() ;i++){
+
 					std::vector<ibex::Interval> x_subslices;
 					x_subslices.clear();
-					/*create the slices*/
-					create_slices(*x_slice[i],x_subslices, t_propa);
+					create_slices(x_slice_bounds[i],x_subslices, t_propa);
 
-					/*For each slice on $t$ compute the corresponding the hull */
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
 					Interval hull_output_x = Interval::EMPTY_SET; Interval hull_output_v = Interval::EMPTY_SET;
 					Interval hull_codomain_x = Interval::EMPTY_SET; Interval hull_codomain_v = Interval::EMPTY_SET;
 
-					/*oracle loop*/
 					for (int j = 0 ; j < x_subslices.size() ; j++){
-
 						/*Temporal slices on $x$ and $v$*/
-						Slice aux_slice_x(*x_slice[i]);
-						Slice aux_slice_v(*v_slice[i]);
-//
+						Slice aux_slice_x(x_slice_bounds[i]);
+						Slice aux_slice_v(v_slice_bounds[i]);
+
 						if (t_propa & FORWARD)
 							aux_slice_x.set_input_gate(x_subslices[j]);
-
 						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
-
-
 						/*Fixpoint for each sub-slice at each tube*/
-						Interval sx;
+						double sx;
+						/*without polygons*/
 //						ctc_deriv.set_fast_mode(true);
 						do
 						{
-							sx = aux_slice_x.codomain();
-							ctc_deriv.contract(aux_slice_x, aux_slice_v);
-							ctc_fwdbwd_slices(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
-						} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
+							sx = aux_slice_x.volume();
+							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
+							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+
+						} while(sx-aux_slice_x.volume()>get_prec());
 
 
 						/*The union of the current Slice is made.*/
-
 						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
 						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |= aux_slice_v.output_gate();
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
-
 					}
 
-					double aux_envelope = x_slice[i]->codomain().diam();
+					double volume = x_slice_bounds[i].volume();
 
-					/*3B part*/
-					if (x.size() == 1){
-						x_slice[i]->set_envelope(hull_codomain_x); v_slice[i]->set_envelope(hull_codomain_v);
-						x_slice[i]->set_input_gate(hull_input_x); v_slice[i]->set_input_gate(hull_input_v);
-						x_slice[i]->set_output_gate(hull_output_x); v_slice[i]->set_output_gate(hull_output_v);
-					}
+					/*Replacing the old domains with the new ones*/
+					x_slice_bounds[i].set_envelope(hull_codomain_x);  v_slice_bounds[i].set_envelope(hull_codomain_v);
+					x_slice_bounds[i].set_input_gate(hull_input_x); v_slice_bounds[i].set_input_gate(hull_input_v);
+					x_slice_bounds[i].set_output_gate(hull_output_x); v_slice_bounds[i].set_output_gate(hull_output_v);
 
-					else{
-						Interval c1,c2; // to store the result
-
-						int nb_3b=x_slice[i]->output_gate().diff(hull_output_x,c1,c2);
-						c1 = Interval(hull_output_x.ub(),x_slice[i]->output_gate().ub());
-						c2 = Interval(x_slice[i]->output_gate().lb(),hull_output_x.lb());
-						/*c1 is upper, c2 is lower*/
-						bool upper; bool lower;
-						/*for c1*/
-						if (c1.diam()>0){
-							if (oracle_3B(c1,*x_slice[i],*v_slice[i],x_slice,v_slice,ub,i)){
-								/*Replacing the old domains with the new ones*/
-								x_slice[i]->set_envelope(Interval(x_slice[i]->codomain().lb(),hull_codomain_x.ub()));
-								x_slice[i]->set_input_gate(Interval(x_slice[i]->input_gate().lb(),hull_input_x.ub()));
-								x_slice[i]->set_output_gate(Interval(x_slice[i]->output_gate().lb(),hull_output_x.ub()));
-							}
-							else{
-								x_slice[i]->set_input_gate(Interval(hull_input_x.lb(),x_slice[i]->input_gate().ub()));
-								ctc_deriv.contract(*x_slice[i], *v_slice[i]);
-								ctc_fwdbwd_slices(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
-								ctc_deriv.contract(*x_slice[i], *v_slice[i]);
-							}
-						}
-						/*for c2*/
-						if (c2.diam()>0){
-							if (oracle_3B(c2,*x_slice[i],*v_slice[i],x_slice,v_slice,lb,i)){
-								/*Replacing the old domains with the new ones*/
-								x_slice[i]->set_envelope(Interval(hull_codomain_x.lb(),x_slice[i]->codomain().ub()));
-								x_slice[i]->set_input_gate(Interval(hull_input_x.lb(),x_slice[i]->input_gate().ub()));
-								x_slice[i]->set_output_gate(Interval(hull_output_x.lb(),x_slice[i]->output_gate().ub()));
-							}
-							else{
-								x_slice[i]->set_input_gate(Interval(hull_input_x.lb(),x_slice[i]->input_gate().ub()));
-								ctc_deriv.contract(*x_slice[i], *v_slice[i]);
-								ctc_fwdbwd_slices(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
-								ctc_deriv.contract(*x_slice[i], *v_slice[i]);
-							}
-						}
-					}
-					if (aux_envelope > x_slice[i]->codomain().diam())
+					if (volume > x_slice_bounds[i].volume())
 						fix_point_n = true;
+
 				}
-				/*is not necessary for 1-dimensional problems*/
-				if (x.size() == 1)
-					fix_point_n=false;
 			} while(fix_point_n);
 
+			/*3B part*/
+			for (int i = 0 ; i < x.size() ; i++){
+				Interval remove_ub,remove_lb;
+				if (t_propa & FORWARD){
+					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-10,x_slice[i]->output_gate().ub());
+					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-10);
+				}
+				if (t_propa & BACKWARD){
+					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-10,x_slice[i]->input_gate().ub());
+					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-10);
+				}
+				if (remove_ub.diam()>1e-7)
+					var3Bcheck(remove_ub,ub,i,x_slice,v_slice,t_propa);
+				if (remove_lb.diam()>1e-7)
+					var3Bcheck(remove_lb,lb,i,x_slice,v_slice,t_propa);
+
+				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+				ctc_bwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
+				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+			}
+
+			/*Move to the next Slice*/
 			if (t_propa & FORWARD){
 				for (int i = 0 ; i < x.size() ; i++){
 					x_slice[i] = x_slice[i]->next_slice();
@@ -163,14 +148,13 @@ namespace tubex
 					v_slice[i] = v_slice[i]->prev_slice();
 				}
 			}
-//			cout << "slice: " <<x_slice[0]->domain()<< endl;
 		}
 		if (m_report)
 			report(tStart,x,old_volume);
 	}
 
 
-	void Ctc3BGuess::ctc_fwdbwd_slices(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
+	void Ctc3BGuess::ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
 
 		/*envelope*/
@@ -185,21 +169,22 @@ namespace tubex
 			v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
-	int Ctc3BGuess::get_bisections(){
+	int Ctc3BGuess::get_bisections()
+	{
 		return this->bisections;
 	}
 
-	double Ctc3BGuess::get_prec(){
+	double Ctc3BGuess::get_prec()
+	{
 		return this->prec;
 	}
 
-	void Ctc3BGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa){
+	void Ctc3BGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)
+	{
 
 		/*Varcid in the input gate*/
 		if (t_propa & FORWARD){
-			if (x_slice.input_gate().diam() == 0)
-				x_slices.push_back(Interval(x_slice.input_gate().ub()));
-			else{
+			if (x_slice.input_gate().diam() != 0){
 				x_slices.push_back(Interval(x_slice.input_gate().lb()));
 				x_slices.push_back(Interval(x_slice.input_gate().ub()));
 			}
@@ -216,181 +201,127 @@ namespace tubex
 		}
 	}
 
-	void Ctc3BGuess::change_bisections(int bisections){
+	void Ctc3BGuess::change_bisections(int bisections)
+	{
 		this->bisections = bisections;
 	}
 
-	bool Ctc3BGuess::oracle_3B(Interval c1,Slice& xx_slice,Slice& vv_slice, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice,int bound,int pos){
-
-		CtcDeriv ctc_deriv;
-
-		if (bound == ub){
-			/*preprocessing: try with c1 first*/
-			Slice aux_slice_x(xx_slice);
-			Slice aux_slice_v(vv_slice);
-			aux_slice_x.set_output_gate(c1);
-			Interval sx;
+	void Ctc3BGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
+	{
+		bool fix_point_n;
+		vector<Slice> x_slice_bounds;
+		vector<Slice> v_slice_bounds;
+		for (int i = 0 ; i < x_slice.size() ; i++){
+			x_slice_bounds.push_back(*x_slice[i]);
+			v_slice_bounds.push_back(*v_slice[i]);
+		}
+		x_slice_bounds[pos].set_output_gate(remove_bound);
+		/*try to remove the complete interval*/
+		for (int i = 0 ;  i < x_slice.size() ; i++){
+			double sx;
+			CtcDeriv ctc_deriv;
+			/*without polygons*/
+//			ctc_deriv.set_fast_mode(true);
 			do
 			{
-				sx = aux_slice_x.codomain();
-				ctc_deriv.contract(aux_slice_x, aux_slice_v);
-				ctc_fwdbwd_slices(aux_slice_x, aux_slice_v, x_slice, v_slice, pos);
-			} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
+				sx = x_slice_bounds[i].volume();
+				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],FORWARD);
+				ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
+			} while(sx-x_slice_bounds[i].volume()>get_prec());
 
-			if (aux_slice_x.is_empty()){
-				Interval c3,c4; // to store the result
-				int nb_3b=xx_slice.output_gate().diff(c1,c3,c4);
-				xx_slice.set_output_gate(c3);
-				return true;
+			/*if something is empty means that we can remove the complete interval*/
+			if (x_slice_bounds[i].is_empty()){
+				if (bound == ub)
+					x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.lb()));
+				else if (bound == lb)
+					x_slice[pos]->set_output_gate(Interval(remove_bound.ub(),x_slice[pos]->output_gate().ub()));
+				return;
+			}
+		}
+
+		/*dichotomic way*/
+		Interval half;
+		if (bound == ub)
+			remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub()); /*todo: check, incorrect*/
+		else if (bound == lb)
+			remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
+
+		for (int k = 0 ;  k < 10 ; k++){
+			/*restore domains*/
+			x_slice_bounds.clear(); v_slice_bounds.clear();
+			for (int i = 0 ; i < x_slice.size() ; i++){
+				x_slice_bounds.push_back(*x_slice[i]);
+				v_slice_bounds.push_back(*v_slice[i]);
 			}
 
-			/*the real method*/
-			else{
-				bool divide = true;
-				int iterations = 0; //iterations to 11?
-				while((divide) && (iterations < 25)){
-					Interval output = Interval(c1.mid(),c1.ub());
-					Slice aux_slice_xx(xx_slice);
-					Slice aux_slice_vv(vv_slice);
-					aux_slice_xx.set_output_gate(output);
-					do
-					{
-						sx = aux_slice_xx.codomain();
-						ctc_deriv.contract(aux_slice_xx, aux_slice_vv);
-						ctc_fwdbwd_slices(aux_slice_xx, aux_slice_vv, x_slice, v_slice, pos);
-					} while(std::abs(sx.diam()-aux_slice_xx.codomain().diam())>get_prec());
+			if (bound == ub)
+				half = Interval(remove_bound.mid(),remove_bound.ub());
 
-					/*we discard the half, update c1 and we continue*/
-					if (aux_slice_xx.is_empty()){
-						c1 = Interval (c1.lb(),c1.mid());
-						iterations++;
-					}
-					/*if we cant discard, we apply 8 subslices*/
-					else{
-//						double diam = c1.diam()/8;
-//						for (int i = 0 ; i < 8 ; i++){
-//							output = Interval(c1.ub()-diam,c1.ub());
-//							Slice aux_slice_xx2(xx_slice);
-//							Slice aux_slice_vv2(vv_slice);
-//							aux_slice_xx2.set_output_gate(output);
-//							do
-//							{
-//								sx = aux_slice_xx2.codomain();
-//								ctc_deriv.contract(aux_slice_xx2, aux_slice_vv2);
-//								ctc_fwdbwd_slices(aux_slice_xx2, aux_slice_vv2, x_slice, v_slice, pos);
-//							} while(std::abs(sx.diam()-aux_slice_xx2.codomain().diam())>get_prec());
-//
-//							if (aux_slice_xx2.is_empty())
-//								c1=Interval(c1.lb(),c1.ub()-diam);
-//							else break;
-//						}
-						divide = false;
-					}
+			else if (bound == lb)
+				half = Interval(remove_bound.lb(),remove_bound.mid());
+
+			x_slice_bounds[pos].set_output_gate(half);
+			bool success = false;
+			for (int i = 0 ;  i < x_slice_bounds.size() ; i++){
+				double sx;
+				CtcDeriv ctc_deriv;
+//				/*without polygons*/
+//				ctc_deriv.set_fast_mode(true);
+				do
+				{
+					sx = x_slice_bounds[i].volume();
+					ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],FORWARD);
+					ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
+				} while(sx-x_slice_bounds[i].volume()>get_prec());
+				/*if something is empty means that we can remove the half*/
+
+				if (x_slice_bounds[i].is_empty()){
+					success = true;
+					if (bound == ub)
+						remove_bound = Interval(remove_bound.lb(),remove_bound.mid());
+					else if (bound == lb)
+						remove_bound = Interval(remove_bound.mid(),remove_bound.ub());
 				}
-
+				if (success)
+					break;
 			}
-
+			/*cant remove half, finish!*/
+			if (!success)
+				break;
 		}
-		if (bound == lb){
-			Slice aux_slice_x(xx_slice);
-			Slice aux_slice_v(vv_slice);
-			aux_slice_x.set_output_gate(c1);
-			Interval sx;
-			do
-			{
-				sx = aux_slice_x.codomain();
-				ctc_deriv.contract(aux_slice_x, aux_slice_v);
-				ctc_fwdbwd_slices(aux_slice_x, aux_slice_v, x_slice, v_slice, pos);
-			} while(std::abs(sx.diam()-aux_slice_x.codomain().diam())>get_prec());
 
-			if (aux_slice_x.is_empty()){
-				Interval c3,c4; // to store the result
-				int nb_3b=xx_slice.output_gate().diff(c1,c3,c4);
-				xx_slice.set_output_gate(c3);
-				return true;
-			}
-
-			/*the real method*/
-			else{
-				bool divide = true;
-				int iterations = 0; //iterations to 11?
-				while((divide) && (iterations < 25)){
-					Interval output = Interval(c1.lb(),c1.mid());
-					Slice aux_slice_xx(xx_slice);
-					Slice aux_slice_vv(vv_slice);
-					aux_slice_xx.set_output_gate(output);
-					do
-					{
-						sx = aux_slice_xx.codomain();
-						ctc_deriv.contract(aux_slice_xx, aux_slice_vv);
-						ctc_fwdbwd_slices(aux_slice_xx, aux_slice_vv, x_slice, v_slice, pos);
-					} while(std::abs(sx.diam()-aux_slice_xx.codomain().diam())>get_prec());
-
-					/*we discard the half, update c1 and we continue*/
-					if (aux_slice_xx.is_empty()){
-						c1 = Interval(c1.mid(),c1.ub());
-						iterations++;
-					}
-					/*if we cant discard, we apply 8 subslices*/
-					else{
-//						for (int i = 0 ; i < 4 ; i++){
-//							output = Interval(c1.ub()-c1.diam(),c1.ub());
-//							Slice aux_slice_xx2(xx_slice);
-//							Slice aux_slice_vv2(vv_slice);
-//							aux_slice_xx2.set_output_gate(output);
-//							do
-//							{
-//								sx = aux_slice_xx2.codomain();
-//								ctc_deriv.contract(aux_slice_xx2, aux_slice_vv2);
-//								ctc_fwdbwd_slices(aux_slice_xx2, aux_slice_vv2, x_slice, v_slice, pos);
-//							} while(std::abs(sx.diam()-aux_slice_xx2.codomain().diam())>get_prec());
-//
-//							if (aux_slice_xx2.is_empty())
-//								c1=Interval(c1.lb(),c1.ub()-c1.diam());
-//							else break;
-//						}
-						divide = false;
-					}
-				}
-
-			}
-		}
-		if (bound == ub){
-//			ratio=
-			xx_slice.set_output_gate(Interval(xx_slice.output_gate().lb(),c1.ub()));
-		}
-		else{
-			xx_slice.set_output_gate(Interval(c1.lb(),xx_slice.output_gate().ub()));
-		}
-		return false;
+		if (bound==ub)
+			x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.ub()));
+		else if (bound==lb)
+			x_slice[pos]->set_output_gate(Interval(remove_bound.lb(),x_slice[pos]->output_gate().ub()));
 	}
 
-	void Ctc3BGuess::report(clock_t tStart,TubeVector& x,double old_volume){
-
-			cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
-			/*CidSlicing does nothing, */
-			if (old_volume == x.volume()){
-				cout << "\033[1;31mNo contraction made by 3BGuess!\033[0m\n";
-				printf("CPU Time spent by 3BGuess: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-			}
-			/*CidSlicing contracts the tube*/
-			else{
-				double doors_size = 0 ;
-				int nb_doors = 0;
-				for (int i = 0 ; i < x.size() ; i++){
-					Slice* x_slice = x[i].first_slice();
-					for (int j = 0 ; j < x[i].nb_slices() ; j++){
-						doors_size +=x_slice->output_gate().diam();
-						nb_doors++;
-						x_slice = x_slice->next_slice();
-					}
-				}
-				cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";
-				printf("CPU Time spent by 3BGuess: %.3f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-				printf("Old Volume: %.7f\n", old_volume);
-				printf("New Volume: %.7f\n", x.volume());
-				printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
-			}
+	void Ctc3BGuess::report(clock_t tStart,TubeVector& x,double old_volume)
+	{
+//			cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
+//			/*CidSlicing does nothing, */
+//			if (old_volume == x.volume()){
+//				cout << "\033[1;31mNo contraction made by 3BGuess!\033[0m\n";
+//				printf("CPU Time spent by 3BGuess: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+//			}
+//			/*CidSlicing contracts the tube*/
+//			else{
+//				double doors_size = 0 ;
+//				int nb_doors = 0;
+//				for (int i = 0 ; i < x.size() ; i++){
+//					Slice* x_slice = x[i].first_slice();
+//					for (int j = 0 ; j < x[i].nb_slices() ; j++){
+//						doors_size +=x_slice->output_gate().diam();
+//						nb_doors++;
+//						x_slice = x_slice->next_slice();
+//					}
+//				}
+//				cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";
+//				printf("CPU Time spent by 3BGuess: %.5f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+//				printf("Old Volume: %.7f\n", old_volume);
+//				printf("New Volume: %.7f\n", x.volume());
+//				printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
+//			}
 		}
 
 

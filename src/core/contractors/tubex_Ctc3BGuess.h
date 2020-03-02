@@ -1,5 +1,5 @@
 /*
- *  CtcBox class
+ *  3BGuess class
  * ----------------------------------------------------------------------------
  * 	\date       2020
  *  \authors  	Victor Reyes, Gilles Trombettoni
@@ -27,7 +27,7 @@ namespace tubex
 
 		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
 
-		void ctc_fwdbwd_slices(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		void ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 
 		int get_bisections();
 
@@ -39,7 +39,7 @@ namespace tubex
 
 		void change_prec(double prec);
 
-		bool oracle_3B(ibex::Interval c1, Slice &xx_slice,Slice& vv_slice,std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int bound, int pos);
+		void var3Bcheck(ibex::Interval remove_ub,int bound, int pos ,std::vector<Slice*> & x_slice,std::vector<Slice*> v_slice,TPropagation t_propa);
 
 		void report(clock_t tStart,TubeVector& x, double old_volume);
 
