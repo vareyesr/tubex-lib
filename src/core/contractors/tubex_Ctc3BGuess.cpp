@@ -121,7 +121,7 @@ namespace tubex
 					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-10,x_slice[i]->output_gate().ub());
 					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-10);
 				}
-				if (t_propa & BACKWARD){
+				else if (t_propa & BACKWARD){
 					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-10,x_slice[i]->input_gate().ub());
 					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-10);
 				}
@@ -215,7 +215,10 @@ namespace tubex
 			x_slice_bounds.push_back(*x_slice[i]);
 			v_slice_bounds.push_back(*v_slice[i]);
 		}
-		x_slice_bounds[pos].set_output_gate(remove_bound);
+		if (t_propa & FORWARD)
+			x_slice_bounds[pos].set_output_gate(remove_bound);
+		else if (t_propa & BACKWARD)
+			x_slice_bounds[pos].set_input_gate(remove_bound);
 		/*try to remove the complete interval*/
 		for (int i = 0 ;  i < x_slice.size() ; i++){
 			double sx;
@@ -225,27 +228,42 @@ namespace tubex
 			do
 			{
 				sx = x_slice_bounds[i].volume();
-				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],FORWARD);
+				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
 				ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 			} while(sx-x_slice_bounds[i].volume()>get_prec());
 
 			/*if something is empty means that we can remove the complete interval*/
 			if (x_slice_bounds[i].is_empty()){
-				if (bound == ub)
-					x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.lb()));
-				else if (bound == lb)
-					x_slice[pos]->set_output_gate(Interval(remove_bound.ub(),x_slice[pos]->output_gate().ub()));
+				if (t_propa & FORWARD){
+					if (bound == ub)
+						x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.lb()));
+					else if (bound == lb)
+						x_slice[pos]->set_output_gate(Interval(remove_bound.ub(),x_slice[pos]->output_gate().ub()));
+				}
+				if (t_propa & BACKWARD){
+					if (bound == ub)
+						x_slice[pos]->set_input_gate(Interval(x_slice[pos]->input_gate().lb(),remove_bound.lb()));
+					else if (bound == lb)
+						x_slice[pos]->set_input_gate(Interval(remove_bound.ub(),x_slice[pos]->input_gate().ub()));
+				}
 				return;
 			}
 		}
 
 		/*dichotomic way*/
 		Interval half;
-		if (bound == ub)
-			remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub()); /*todo: check, incorrect*/
-		else if (bound == lb)
-			remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
-
+		if (t_propa & FORWARD){
+			if (bound == ub)
+				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub()); /*todo: check, incorrect*/
+			else if (bound == lb)
+				remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
+		}
+		else if (t_propa & BACKWARD){
+			if (bound == ub)
+				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].input_gate().ub()); /*todo: check, incorrect*/
+			else if (bound == lb)
+				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
+		}
 		for (int k = 0 ;  k < 10 ; k++){
 			/*restore domains*/
 			x_slice_bounds.clear(); v_slice_bounds.clear();
@@ -259,8 +277,10 @@ namespace tubex
 
 			else if (bound == lb)
 				half = Interval(remove_bound.lb(),remove_bound.mid());
-
-			x_slice_bounds[pos].set_output_gate(half);
+			if (t_propa & FORWARD)
+				x_slice_bounds[pos].set_output_gate(half);
+			else if (t_propa & BACKWARD)
+				x_slice_bounds[pos].set_input_gate(half);
 			bool success = false;
 			for (int i = 0 ;  i < x_slice_bounds.size() ; i++){
 				double sx;
@@ -270,7 +290,7 @@ namespace tubex
 				do
 				{
 					sx = x_slice_bounds[i].volume();
-					ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],FORWARD);
+					ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
 					ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 				} while(sx-x_slice_bounds[i].volume()>get_prec());
 				/*if something is empty means that we can remove the half*/
@@ -289,11 +309,18 @@ namespace tubex
 			if (!success)
 				break;
 		}
-
-		if (bound==ub)
-			x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.ub()));
-		else if (bound==lb)
-			x_slice[pos]->set_output_gate(Interval(remove_bound.lb(),x_slice[pos]->output_gate().ub()));
+		if (t_propa & FORWARD){
+			if (bound==ub)
+				x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.ub()));
+			else if (bound==lb)
+				x_slice[pos]->set_output_gate(Interval(remove_bound.lb(),x_slice[pos]->output_gate().ub()));
+		}
+		else if (t_propa & BACKWARD){
+			if (bound==ub)
+				x_slice[pos]->set_input_gate(Interval(x_slice[pos]->input_gate().lb(),remove_bound.ub()));
+			else if (bound==lb)
+				x_slice[pos]->set_input_gate(Interval(remove_bound.lb(),x_slice[pos]->input_gate().ub()));
+		}
 	}
 
 	void Ctc3BGuess::report(clock_t tStart,TubeVector& x,double old_volume)
