@@ -1,5 +1,5 @@
 /*
- *  CtcBox class
+ *  CtcCidSlicing Class
  * ----------------------------------------------------------------------------
  * 	\date       2020
  *  \authors  	Victor Reyes, Gilles Trombettoni
@@ -49,9 +49,9 @@ namespace tubex
 			}
 		}
 
-		/*Defining the sub-contractor Ctc_Derive*/
-		CtcDeriv ctc_deriv;
-		int no_contraction = 0 ;
+//		/*Defining the sub-contractor Ctc_Derive*/
+//		CtcDeriv ctc_deriv;
+
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 			/*iteration step, made for each subslice at each tube x*/
@@ -65,7 +65,6 @@ namespace tubex
 
 					/*create the sub-slices*/
 					create_subslices(*x_slice[i],x_subslices, t_propa);
-
 					/*For each slice on $t$ compute the corresponding the hull */
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
 					Interval hull_output_x = Interval::EMPTY_SET; Interval hull_output_v = Interval::EMPTY_SET;
@@ -86,7 +85,8 @@ namespace tubex
 						/*Fixpoint for each sub-slice at each tube*/
 						double sx;
 						/*without polygons*/
-//						ctc_deriv.set_fast_mode(true);
+						if(m_fast_mode)
+							ctc_deriv.set_fast_mode(true);
 						do
 						{
 							sx = aux_slice_x.volume();

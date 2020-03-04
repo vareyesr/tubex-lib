@@ -45,8 +45,6 @@ namespace tubex
 				v_slice.push_back(v[i].last_slice());
 			}
 
-		/*Defining the sub-contractor Ctc_Derive*/
-		CtcDeriv ctc_deriv;
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 			bool fix_point_n;
@@ -85,7 +83,8 @@ namespace tubex
 						/*Fixpoint for each sub-slice at each tube*/
 						double sx;
 						/*without polygons*/
-//						ctc_deriv.set_fast_mode(true);
+						if (m_fast_mode)
+							ctc_deriv.set_fast_mode(true);
 						do
 						{
 							sx = aux_slice_x.volume();
@@ -208,6 +207,7 @@ namespace tubex
 
 	void Ctc3BGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
+		ctc_deriv.set_fast_mode(false);
 		bool fix_point_n;
 		vector<Slice> x_slice_bounds;
 		vector<Slice> v_slice_bounds;
@@ -222,9 +222,7 @@ namespace tubex
 		/*try to remove the complete interval*/
 		for (int i = 0 ;  i < x_slice.size() ; i++){
 			double sx;
-			CtcDeriv ctc_deriv;
-			/*without polygons*/
-//			ctc_deriv.set_fast_mode(true);
+
 			do
 			{
 				sx = x_slice_bounds[i].volume();
@@ -254,15 +252,15 @@ namespace tubex
 		Interval half;
 		if (t_propa & FORWARD){
 			if (bound == ub)
-				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub()); /*todo: check, incorrect*/
+				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub());
 			else if (bound == lb)
-				remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
+				remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub());
 		}
 		else if (t_propa & BACKWARD){
 			if (bound == ub)
-				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].input_gate().ub()); /*todo: check, incorrect*/
+				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].input_gate().ub());
 			else if (bound == lb)
-				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub()); /*todo: check, incorrect*/
+				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub());
 		}
 		for (int k = 0 ;  k < 10 ; k++){
 			/*restore domains*/
@@ -286,7 +284,7 @@ namespace tubex
 				double sx;
 				CtcDeriv ctc_deriv;
 //				/*without polygons*/
-//				ctc_deriv.set_fast_mode(true);
+
 				do
 				{
 					sx = x_slice_bounds[i].volume();

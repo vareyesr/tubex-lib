@@ -67,6 +67,7 @@ namespace tubex
 		int scid;
 		double prec;
 		ibex::Fnc& fnc;
+		CtcDeriv ctc_deriv;
 	};
 }
 

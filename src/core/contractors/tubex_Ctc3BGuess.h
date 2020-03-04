@@ -47,6 +47,7 @@ namespace tubex
 		int bisections;
 		double prec;
 		ibex::Fnc& fnc;
+		CtcDeriv ctc_deriv;
 	};
 }
 
