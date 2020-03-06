@@ -37,9 +37,9 @@ namespace tubex
 		 */
 		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool report=false);
 		/*
-		 * ctc_fwd_slices manages to make an evaluation of the current Slice in order to contract and update v
+		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
 		 */
-		void ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 		/*
 		 * used to obtain the number of scid subslices.
 		 */

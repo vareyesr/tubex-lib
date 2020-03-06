@@ -77,6 +77,10 @@ namespace tubex
 						Slice aux_slice_x(*x_slice[i]);
 						Slice aux_slice_v(*v_slice[i]);
 
+						/*If the tube is unbounded, then the algorithm stops*/
+						if (x_slice[i]->codomain().is_unbounded())
+							return;
+
 						if (t_propa & FORWARD)
 							aux_slice_x.set_input_gate(x_subslices[j]);
 						else if (t_propa & BACKWARD)
@@ -91,9 +95,9 @@ namespace tubex
 						{
 							sx = aux_slice_x.volume();
 							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
-							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+							ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 
-						} while(sx-aux_slice_x.volume()>get_prec());
+						} while(sx - aux_slice_x.volume() > get_prec());
 
 						/*The union of the current Slice is made.*/
 						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
@@ -139,7 +143,7 @@ namespace tubex
 	}
 
 
-	void CtcCidSlicing::ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
+	void CtcCidSlicing::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
 		/*envelope*/
 		IntervalVector envelope(x_slice.size());
@@ -184,8 +188,6 @@ namespace tubex
 
 		/*Varcid in the output gate*/
 		else if (t_propa & BACKWARD){
-//			x_slices.push_back(Interval(x_slice.output_gate().lb()));
-//			x_slices.push_back(Interval(x_slice.output_gate().ub()));
 			double size_interval = x_slice.output_gate().diam()/get_scid();
 			for (int i = 0 ; i < get_scid() ;i++){
 				x_slices.push_back(Interval(x_slice.output_gate().lb()+i*size_interval,x_slice.output_gate().lb()+size_interval*(i+1)));
