@@ -1,12 +1,12 @@
 /*
- *  3BGuess class
+ *  DynCidGuess class
  * ----------------------------------------------------------------------------
  * 	\date       2020
  *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 
-#ifndef __TUBEX_CTC3BGUESS_H__
-#define __TUBEX_CTC3BGUESS_H__
+#ifndef __TUBEX_CTCDYNCIDGUESS_H__
+#define __TUBEX_CTCDYNCIDGUESS_H__
 
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
@@ -18,16 +18,16 @@
 
 namespace tubex
 {
-	class Ctc3BGuess : public Ctc{
+	class CtcDynCidGuess : public Ctc{
 		enum {lb,ub};
 
 	public:
 
-		Ctc3BGuess(ibex::Fnc& fnc,int bisections=20, double prec=1e-7);
+		CtcDynCidGuess(ibex::Fnc& fnc,int bisections=20, double prec=1e-7);
 
 		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
 
-		void ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 
 		int get_bisections();
 

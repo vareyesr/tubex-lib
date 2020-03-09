@@ -1,12 +1,12 @@
 /*
- *  CtcCidSlicing class
+ *  CtcDynCid class
  * ----------------------------------------------------------------------------
  * 	\date       2020
  *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 
-#ifndef __TUBEX_CTCCIDSLICING_H__
-#define __TUBEX_CTCCIDSLICING_H__
+#ifndef __TUBEX_CTCDYNCID_H__
+#define __TUBEX_CTCDYNCID_H_
 
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
@@ -18,11 +18,11 @@
 namespace tubex
 {
 
-	class CtcCidSlicing : public Ctc{
+	class CtcDynCid : public Ctc{
 
 	public:
 		/*
-		 * CtcCidSlicing correspond to a generic contractor applied at the Slice level. It is based
+		 * CtcDynCid correspond to a generic contractor applied at the Slice level. It is based
 		 * on the famous Cid-consistency used in continuous domains. It divides one slice
 		 * in the corresponding x coordinate by several subslices of equal width (the number is
 		 * defined by the variable $s_{cid}$). Then two contractors are applied: $C_{Deriv}$
@@ -30,7 +30,7 @@ namespace tubex
 		 * After all the s_cid are treated, the Hull is applied and intersected with the
 		 * corresponding slice. By default it uses scid=8 and prec=1e-7
 		 */
-		CtcCidSlicing(ibex::Fnc& fnc,int scid=8, double prec=0.);
+		CtcDynCid(ibex::Fnc& fnc,int scid=8, double prec=0.);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
@@ -71,4 +71,4 @@ namespace tubex
 	};
 }
 
-#endif /* SRC_CORE_CONTRACTORS_TUBEX_CTCCIDSLICING_H_ */
+#endif /* SRC_CORE_CONTRACTORS_TUBEX_CTCDYNCID_H_ */

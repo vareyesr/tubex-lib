@@ -4,7 +4,7 @@
  * 	\date       2020
  *  \authors  	Victor Reyes
  */
-#include "tubex_Ctc3BGuess.h"
+#include "tubex_CtcDynCidGuess.h"
 
 using namespace std;
 using namespace ibex;
@@ -13,14 +13,21 @@ using namespace ibex;
 
 namespace tubex
 {
-	Ctc3BGuess::Ctc3BGuess(ibex::Fnc& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec)
+	CtcDynCidGuess::CtcDynCidGuess(ibex::Fnc& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec)
 	{
 		assert(bisections >= 0.);
 		assert(prec >= 0);
 	}
 
 	/*todo: fixpoint not obtained, more than one call needed*/
-	void Ctc3BGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report)
+	double diam_to_remove = 0;
+	double diam_removed = 0;
+	double ratio_a = 0;
+	double ratio_b = 0;
+	double sum_total = 0 ;
+	int sucess = 0; int total_it = 0;
+
+	void CtcDynCidGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report)
 	{
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
@@ -89,7 +96,7 @@ namespace tubex
 						{
 							sx = aux_slice_x.volume();
 							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
-							ctc_bwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+							ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 
 						} while(sx-aux_slice_x.volume()>get_prec());
 
@@ -117,21 +124,25 @@ namespace tubex
 			for (int i = 0 ; i < x.size() ; i++){
 				Interval remove_ub,remove_lb;
 				if (t_propa & FORWARD){
-					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-10,x_slice[i]->output_gate().ub());
-					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-10);
+					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-40,x_slice[i]->output_gate().ub());
+					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-40);
 				}
 				else if (t_propa & BACKWARD){
-					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-10,x_slice[i]->input_gate().ub());
-					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-10);
+					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-40,x_slice[i]->input_gate().ub());
+					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-40);
 				}
+				ratio_a = x_slice[i]->output_gate().diam() + ratio_a;
 				if (remove_ub.diam()>1e-7)
 					var3Bcheck(remove_ub,ub,i,x_slice,v_slice,t_propa);
 				if (remove_lb.diam()>1e-7)
 					var3Bcheck(remove_lb,lb,i,x_slice,v_slice,t_propa);
 
 				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
-				ctc_bwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
+				ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
 				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+				ratio_b = x_slice[i]->output_gate().diam() + ratio_b;
+				total_it++;
+				sum_total = ratio_b/ratio_a+sum_total;
 			}
 
 			/*Move to the next Slice*/
@@ -153,7 +164,7 @@ namespace tubex
 	}
 
 
-	void Ctc3BGuess::ctc_bwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
+	void CtcDynCidGuess::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
 
 		/*envelope*/
@@ -168,17 +179,17 @@ namespace tubex
 			v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
-	int Ctc3BGuess::get_bisections()
+	int CtcDynCidGuess::get_bisections()
 	{
 		return this->bisections;
 	}
 
-	double Ctc3BGuess::get_prec()
+	double CtcDynCidGuess::get_prec()
 	{
 		return this->prec;
 	}
 
-	void Ctc3BGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)
+	void CtcDynCidGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)
 	{
 
 		/*Varcid in the input gate*/
@@ -200,13 +211,16 @@ namespace tubex
 		}
 	}
 
-	void Ctc3BGuess::change_bisections(int bisections)
+	void CtcDynCidGuess::change_bisections(int bisections)
 	{
 		this->bisections = bisections;
 	}
 
-	void Ctc3BGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
+	void CtcDynCidGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
+
+		diam_to_remove = diam_to_remove + remove_bound.diam();
+		double to_remove = remove_bound.diam();
 		ctc_deriv.set_fast_mode(false);
 		bool fix_point_n;
 		vector<Slice> x_slice_bounds;
@@ -227,7 +241,7 @@ namespace tubex
 			{
 				sx = x_slice_bounds[i].volume();
 				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
-				ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
+				ctc_fwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 			} while(sx-x_slice_bounds[i].volume()>get_prec());
 
 			/*if something is empty means that we can remove the complete interval*/
@@ -244,24 +258,27 @@ namespace tubex
 					else if (bound == lb)
 						x_slice[pos]->set_input_gate(Interval(remove_bound.ub(),x_slice[pos]->input_gate().ub()));
 				}
+				diam_removed = diam_removed +remove_bound.diam();
+				sucess++;
 				return;
 			}
 		}
 
+
 		/*dichotomic way*/
-		Interval half;
-		if (t_propa & FORWARD){
-			if (bound == ub)
-				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub());
-			else if (bound == lb)
-				remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub());
-		}
-		else if (t_propa & BACKWARD){
-			if (bound == ub)
-				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].input_gate().ub());
-			else if (bound == lb)
-				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub());
-		}
+		Interval half;bool success;
+//		if (t_propa & FORWARD){
+//			if (bound == ub)
+//				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].output_gate().ub());
+//			else if (bound == lb)
+//				remove_bound = Interval(x_slice_bounds[pos].output_gate().lb(),remove_bound.ub());
+//		}
+//		else if (t_propa & BACKWARD){
+//			if (bound == ub)
+//				remove_bound = Interval(remove_bound.lb(),x_slice_bounds[pos].input_gate().ub());
+//			else if (bound == lb)
+//				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub());
+//		}
 		for (int k = 0 ;  k < 10 ; k++){
 			/*restore domains*/
 			x_slice_bounds.clear(); v_slice_bounds.clear();
@@ -279,7 +296,7 @@ namespace tubex
 				x_slice_bounds[pos].set_output_gate(half);
 			else if (t_propa & BACKWARD)
 				x_slice_bounds[pos].set_input_gate(half);
-			bool success = false;
+			success = false;
 			for (int i = 0 ;  i < x_slice_bounds.size() ; i++){
 				double sx;
 				CtcDeriv ctc_deriv;
@@ -289,7 +306,7 @@ namespace tubex
 				{
 					sx = x_slice_bounds[i].volume();
 					ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
-					ctc_bwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
+					ctc_fwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 				} while(sx-x_slice_bounds[i].volume()>get_prec());
 				/*if something is empty means that we can remove the half*/
 
@@ -304,9 +321,14 @@ namespace tubex
 					break;
 			}
 			/*cant remove half, finish!*/
-			if (!success)
+			if (!success){
 				break;
+			}
+
 		}
+
+		diam_removed = diam_removed +(to_remove - remove_bound.diam());
+//
 		if (t_propa & FORWARD){
 			if (bound==ub)
 				x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.ub()));
@@ -321,7 +343,7 @@ namespace tubex
 		}
 	}
 
-	void Ctc3BGuess::report(clock_t tStart,TubeVector& x,double old_volume)
+	void CtcDynCidGuess::report(clock_t tStart,TubeVector& x,double old_volume)
 	{
 //			cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
 //			/*CidSlicing does nothing, */
@@ -351,7 +373,7 @@ namespace tubex
 
 
 
-	void Ctc3BGuess::change_prec(double prec){
+	void CtcDynCidGuess::change_prec(double prec){
 		this->prec = prec;
 	}
 }
