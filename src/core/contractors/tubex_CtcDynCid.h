@@ -35,7 +35,7 @@ namespace tubex
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool report=false);
+		void contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa);
 		/*
 		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
 		 */
@@ -60,8 +60,6 @@ namespace tubex
 		 * creates a certain number of subslices to be treated
 		 */
 		void create_subslices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
-
-		void report(clock_t tStart,TubeVector& x, double old_volume);
 
 	private:
 		int scid;
