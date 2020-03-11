@@ -58,7 +58,7 @@ namespace tubex
 				x_slice.push_back(x[i].slice(time_dom));
 				v_slice.push_back(v[i].slice(time_dom));
 			}
-			if (t_propa & FORWARD){  //todo: check if it is correct not include BACKWARD.
+			if (t_propa & FORWARD){  //todo: check if it is correct
 				for (int i = 0 ; i < x.size() ; i++){
 					x_slice[i]=x_slice[i]->prev_slice();
 					v_slice[i]=v_slice[i]->prev_slice();
@@ -74,7 +74,13 @@ namespace tubex
 
 			if(dynamic_cast <CtcDynCid*> (slice_ctr)){
 				CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
-				cid->contract(x_slice,v_slice,t_propa);
+				if (!cid->contract(x_slice,v_slice,t_propa)){
+					if (t_propa & FORWARD)
+						finaltime = x_slice[0]->domain().lb();
+					else if (t_propa & BACKWARD)
+						finaltime = x_slice[0]->domain().ub();
+					return;
+				}
 			}
 
 			else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
@@ -86,7 +92,7 @@ namespace tubex
 				// todo: implement the contraction
 			}
 			else{
-				cout << "ERROR: this contractor is not handled by CtcIntegration" << endl;
+				cout << "ERROR: this sub-contractor is not handled by CtcIntegration" << endl;
 				return;
 			}
 
@@ -104,10 +110,21 @@ namespace tubex
 				}
 			}
 		}
+		if (t_propa & FORWARD)
+			finaltime = x.domain().ub();
+		else if (t_propa & BACKWARD)
+			finaltime = x.domain().lb();
+	}
+
+	double CtcIntegration::get_finaltime()
+	{
+		return this->finaltime;
 	}
 
 	void CtcIntegration::report(clock_t tStart,TubeVector& x,double old_volume)
 	{
 
 	}
+
+
 }

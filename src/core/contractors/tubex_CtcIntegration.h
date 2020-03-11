@@ -22,7 +22,10 @@ namespace tubex
 	class CtcIntegration : public Ctc{
 
 	public:
-
+		//todo: re-write all the comments
+		/*
+		 * This contractor handles the complete tube.
+		 */
 		CtcIntegration(ibex::Fnc& fnc, Ctc* slice_ctr);
 		/*
 		 * This method performs a contraction for the TubeVector x.
@@ -39,10 +42,12 @@ namespace tubex
 		 */
 		void report(clock_t tStart,TubeVector& x, double old_volume);
 
+		double get_finaltime();
+
 	private:
 		Ctc* slice_ctr;
 		ibex::Fnc& fnc;
-		CtcDeriv ctc_deriv;
+		double finaltime;
 	};
 }
 

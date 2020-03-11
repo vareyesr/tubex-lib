@@ -32,10 +32,10 @@ namespace tubex
 		 */
 		CtcDynCid(ibex::Fnc& fnc,int scid=8, double prec=0.);
 		/*
-		 * This method performs a contraction for the TubeVector x.
+		 * This method performs a contraction at the Slice level.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa);
+		bool contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa);
 		/*
 		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
 		 */
