@@ -37,7 +37,7 @@ namespace tubex
 
 		/*set where to start with the contraction in the dom=[t0,tf]*/
 		/*if the contraction is from t=t0*/
-		if (x.domain().lb() <= time_dom){
+		if (time_dom <= x.domain().lb()){
 			for (int i = 0 ; i < x.size() ; i++){
 				x_slice.push_back(x[i].first_slice());
 				v_slice.push_back(v[i].first_slice());
@@ -45,7 +45,7 @@ namespace tubex
 		}
 
 		/*if the contraction is from t=tf*/
-		else if (x.domain().ub() >= time_dom){
+		else if (time_dom >= x.domain().ub()){
 			for (int i = 0 ; i < x.size() ; i++){
 				x_slice.push_back(x[i].last_slice());
 				v_slice.push_back(v[i].last_slice());
@@ -60,18 +60,18 @@ namespace tubex
 			}
 			if (t_propa & FORWARD){  //todo: check if it is correct
 				for (int i = 0 ; i < x.size() ; i++){
-					x_slice[i]=x_slice[i]->prev_slice();
-					v_slice[i]=v_slice[i]->prev_slice();
+					x_slice[i]=x_slice[i]->next_slice();
+					v_slice[i]=v_slice[i]->next_slice();
 				}
 			}
 		}
 
 		/*for each tube, go all over the slices*/
-
 		while(x_slice[0] != NULL){
 
-			//todo: a better solution for this?
-
+			/*If the slice is unbounded, call picard and...?*/
+//			if (v_slice[i]->codomain().is_unbounded())
+//				return false;
 			if(dynamic_cast <CtcDynCid*> (slice_ctr)){
 				CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
 				if (!cid->contract(x_slice,v_slice,t_propa)){
