@@ -58,7 +58,7 @@ namespace tubex
 				x_slice.push_back(x[i].slice(time_dom));
 				v_slice.push_back(v[i].slice(time_dom));
 			}
-			if (t_propa & FORWARD){  //todo: check if it is correct
+			if (t_propa & FORWARD){
 				for (int i = 0 ; i < x.size() ; i++){
 					x_slice[i]=x_slice[i]->next_slice();
 					v_slice[i]=v_slice[i]->next_slice();
@@ -69,9 +69,12 @@ namespace tubex
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 
-			/*If the slice is unbounded, call picard and...?*/
-//			if (v_slice[i]->codomain().is_unbounded())
-//				return false;
+			/*todo: call picard to make it bounded*/
+			for (int i = 0 ; i < v_slice.size() ; i++){
+				if (v_slice[i]->codomain().is_unbounded())
+					return;
+			}
+
 			if(dynamic_cast <CtcDynCid*> (slice_ctr)){
 				CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
 				if (!cid->contract(x_slice,v_slice,t_propa)){
@@ -123,8 +126,30 @@ namespace tubex
 
 	void CtcIntegration::report(clock_t tStart,TubeVector& x,double old_volume)
 	{
-
-	}
+//		cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
+//		/*CidSlicing does nothing, */
+//		if (old_volume == x.volume()){
+//			cout << "\033[1;31mNo contraction made by 3BGuess!\033[0m\n";
+//			printf("CPU Time spent by 3BGuess: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+//		}
+//		/*CidSlicing contracts the tube*/
+//		else{
+//			double doors_size = 0 ;
+//			int nb_doors = 0;
+//			for (int i = 0 ; i < x.size() ; i++){
+//				Slice* x_slice = x[i].first_slice();
+//				for (int j = 0 ; j < x[i].nb_slices() ; j++){
+//					doors_size +=x_slice->output_gate().diam();
+//					nb_doors++;
+//					x_slice = x_slice->next_slice();
+//				}
+//			}
+//			cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";
+//			printf("CPU Time spent by 3BGuess: %.5f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+//			printf("Old Volume: %.7f\n", old_volume);
+//			printf("New Volume: %.7f\n", x.volume());
+//			printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
+}
 
 
 }

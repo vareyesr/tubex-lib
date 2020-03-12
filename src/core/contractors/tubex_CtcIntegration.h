@@ -22,7 +22,7 @@ namespace tubex
 	class CtcIntegration : public Ctc{
 
 	public:
-		//todo: re-write all the comments
+
 		/*
 		 * This contractor handles the complete tube.
 		 */
@@ -42,6 +42,9 @@ namespace tubex
 		 */
 		void report(clock_t tStart,TubeVector& x, double old_volume);
 
+		/*
+		 * returns the final time reached during contraction
+		 */
 		double get_finaltime();
 
 	private:

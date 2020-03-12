@@ -12,11 +12,11 @@ using namespace ibex;
 
 
 namespace tubex
-{
-	CtcODE::CtcODE(std::vector<double> observations, CtcIntegration integration): observations(observations), integration(integration)
+{	//ctc_integration, observations->input_times
+	CtcODE::CtcODE(std::vector<double> input_times, CtcIntegration ctc_integration): input_times(input_times), ctc_integration(ctc_integration)
 	{
 		/*check input, size must be greater than 0*/
-		assert(observations.size() > 0.);
+		assert(input_times.size() > 0.);
 		/*check if it is sorted?*/
 
 	}
@@ -25,22 +25,22 @@ namespace tubex
 	{
 
 		/*FORWARD Phase*/
-		for (int i = 0 ; i < observations.size() ; i++){
-			integration.contract(x,v,observations[i],FORWARD);
+		for (int i = 0 ; i < input_times.size() ; i++){
+			ctc_integration.contract(x,v,input_times[i],FORWARD);
 			int ii = 0;
-			for (int j = i+1 ; j < observations.size() ; j++){
-				if (integration.get_finaltime() > observations[j])
+			for (int j = i+1 ; j < input_times.size() ; j++){
+				if (ctc_integration.get_finaltime() > input_times[j])
 					ii++;
 			}
 			i+=ii;
 		}
 
 		/*BACKWARD Phase*/
-		for (int i = observations.size()-1 ; i >= 0 ; i--){
-			integration.contract(x,v,observations[i],BACKWARD);
+		for (int i = input_times.size()-1 ; i >= 0 ; i--){
+			ctc_integration.contract(x,v,input_times[i],BACKWARD);
 			int ii = 0;
 			for (int j = i ; j >=0 ; j--){
-				if (integration.get_finaltime() < observations[j])
+				if (ctc_integration.get_finaltime() < input_times[j])
 					ii--;
 			}
 			i+=ii;
