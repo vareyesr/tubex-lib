@@ -13,7 +13,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcODE::CtcODE(std::vector<int> observations, CtcIntegration integration): observations(observations), integration(integration)
+	CtcODE::CtcODE(std::vector<double> observations, CtcIntegration integration): observations(observations), integration(integration)
 	{
 		/*check input, size must be greater than 0*/
 		assert(observations.size() > 0.);
@@ -23,6 +23,7 @@ namespace tubex
 
 	void CtcODE::contract(TubeVector& x, TubeVector& v)
 	{
+
 		/*FORWARD Phase*/
 		for (int i = 0 ; i < observations.size() ; i++){
 			integration.contract(x,v,observations[i],FORWARD);
@@ -33,14 +34,16 @@ namespace tubex
 			}
 			i+=ii;
 		}
+
 		/*BACKWARD Phase*/
 		for (int i = observations.size()-1 ; i >= 0 ; i--){
 			integration.contract(x,v,observations[i],BACKWARD);
 			int ii = 0;
 			for (int j = i ; j >=0 ; j--){
 				if (integration.get_finaltime() < observations[j])
-					ii++;
+					ii--;
 			}
+			i+=ii;
 		}
 	}
 }

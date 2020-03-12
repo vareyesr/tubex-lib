@@ -47,9 +47,9 @@ namespace tubex
 					Slice aux_slice_x(*x_slice[i]);
 					Slice aux_slice_v(*v_slice[i]);
 
-					/*If the tube is unbounded, then the algorithm stops*/
-					if (v_slice[i]->codomain().is_unbounded())
-						return false;
+//					/*If the tube is unbounded, then the algorithm stops*/
+//					if (v_slice[i]->codomain().is_unbounded())
+//						return false;
 
 					if (t_propa & FORWARD)
 						aux_slice_x.set_input_gate(x_subslices[j]);

@@ -21,7 +21,7 @@ namespace tubex
 
 	public:
 
-		CtcODE(std::vector<int> observations, CtcIntegration integration);
+		CtcODE(std::vector<double> observations, CtcIntegration integration);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
@@ -30,7 +30,7 @@ namespace tubex
 
 	private:
 
-		std::vector<int> observations;
+		std::vector<double> observations;
 		CtcIntegration integration;
 	};
 }
