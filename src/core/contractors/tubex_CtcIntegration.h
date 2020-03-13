@@ -6,7 +6,7 @@
  */
 
 #ifndef __TUBEX_CTCINTEGRATION_H__
-#define __TUBEX_CTCINTEGRATION_H_
+#define __TUBEX_CTCINTEGRATION_H__
 
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
