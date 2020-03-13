@@ -22,11 +22,17 @@ namespace tubex
 
 	bool CtcDynCid::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
-		//todo:make an assert which checks the domain of each slice in x_slice.
+
+		//checks that the domain of each slice is the same.
+		Interval to_try(x_slice[0]->domain());
+		for (int i = 1 ; i < x_slice.size(); i++)
+			assert(to_try == x_slice[i]->domain());
+
 		bool fix_point_n;
 		bool first_iteration = true;
 
 		do{
+			fix_point_n = false;
 			for (int i = 0 ; i < x_slice.size() ; i++){
 
 				std::vector<ibex::Interval> x_subslices;
