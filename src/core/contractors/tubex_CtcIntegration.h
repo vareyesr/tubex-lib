@@ -13,7 +13,7 @@
 #include "ibex_Function.h"
 #include "tubex_CtcDeriv.h"
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 
 namespace tubex
@@ -24,7 +24,8 @@ namespace tubex
 	public:
 
 		/*
-		 * This contractor handles the complete tube.
+		 * CtcIntegration is a contractor that works at the Tube level. It requires as input an evolution function and a Slice contractor.
+		 * Currently, the slice contractors that can be used are: CtcDynCid and CtcDynCidGuess
 		 */
 		CtcIntegration(ibex::Fnc& fnc, Ctc* slice_ctr);
 		/*

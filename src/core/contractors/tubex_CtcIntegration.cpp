@@ -88,7 +88,13 @@ namespace tubex
 
 			else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
 				CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
-				//todo: implement the contraction
+				if (!cidguess->contract(x_slice,v_slice,t_propa)){
+					if (t_propa & FORWARD)
+						finaltime = x_slice[0]->domain().lb();
+					else if (t_propa & BACKWARD)
+						finaltime = x_slice[0]->domain().ub();
+					return;
+				}
 			}
 			else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
 				CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
