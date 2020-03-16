@@ -13,7 +13,7 @@
 #include "ibex_Function.h"
 #include "tubex_CtcDeriv.h"
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 namespace tubex
 {

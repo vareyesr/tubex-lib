@@ -80,6 +80,10 @@ namespace tubex
 					hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
 					hull_output_x |= aux_slice_x.output_gate(); hull_output_v |= aux_slice_v.output_gate();
 					hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
+
+					//incrementality test for cid
+					if (hull_codomain_x == x_slice[i]->codomain())
+						break;
 				}
 
 				double aux_envelope = x_slice[i]->codomain().diam();
@@ -146,17 +150,34 @@ namespace tubex
 	{
 		/*Varcid in the input gate*/
 		if (t_propa & FORWARD){
-			double size_interval = x_slice.input_gate().diam()/get_scid();
-			for (int i = 0 ; i < get_scid() ;i++){
-				x_slices.push_back(Interval(x_slice.input_gate().lb()+i*size_interval,x_slice.input_gate().lb()+size_interval*(i+1)));
+			if (get_scid() == 1)
+				x_slices.push_back(x_slice.input_gate());
+
+			else{
+				double size_interval = x_slice.input_gate().diam()/get_scid();
+				/*first, the bound subslices are pushed*/
+				x_slices.push_back(Interval(x_slice.input_gate().lb(),x_slice.input_gate().lb()+size_interval));
+				x_slices.push_back(Interval(x_slice.input_gate().ub()-size_interval,x_slice.input_gate().ub()));
+				/*the other ones*/
+				for (int i = 1 ; i < get_scid()-1 ;i++){
+					x_slices.push_back(Interval(x_slice.input_gate().lb()+i*size_interval,x_slice.input_gate().lb()+size_interval*(i+1)));
+				}
 			}
 		}
 
 		/*Varcid in the output gate*/
 		else if (t_propa & BACKWARD){
-			double size_interval = x_slice.output_gate().diam()/get_scid();
-			for (int i = 0 ; i < get_scid() ;i++){
-				x_slices.push_back(Interval(x_slice.output_gate().lb()+i*size_interval,x_slice.output_gate().lb()+size_interval*(i+1)));
+			if (get_scid() == 1)
+				x_slices.push_back(x_slice.output_gate());
+
+			else{
+				double size_interval = x_slice.output_gate().diam()/get_scid();
+				/*first, the bound subslices are pushed*/
+				x_slices.push_back(Interval(x_slice.output_gate().lb(),x_slice.output_gate().lb()+size_interval));
+				x_slices.push_back(Interval(x_slice.output_gate().ub()-size_interval,x_slice.output_gate().ub()));
+				for (int i = 1 ; i < get_scid()-1 ;i++){
+					x_slices.push_back(Interval(x_slice.output_gate().lb()+i*size_interval,x_slice.output_gate().lb()+size_interval*(i+1)));
+				}
 			}
 		}
 	}
