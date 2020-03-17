@@ -34,6 +34,10 @@ namespace tubex
 		 */
 		void contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool report=false);
 		/*
+		 * Same as above, but v is computed inside.
+		 */
+		void contract(TubeVector& x, double time_dom, TPropagation t_propa, bool report=false);
+		/*
 		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
 		 */
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);

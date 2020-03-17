@@ -125,6 +125,32 @@ namespace tubex
 			finaltime = x.domain().lb();
 	}
 
+	void CtcIntegration::contract(TubeVector& x, double time_dom, TPropagation t_propa, bool m_report)
+	{
+		/*v is computed*/
+		TubeVector v=x;
+		vector<Slice*> x_slice;
+		vector<Slice*> v_slice;
+
+		for (int i = 0 ; i < x.size() ; i++){
+			x_slice.push_back(x[i].first_slice());
+			v_slice.push_back(v[i].first_slice());
+		}
+		while(x_slice[0] != NULL){
+			IntervalVector envelope(x_slice.size());
+			for (int j = 0 ; j < x_slice.size() ; j++)
+				envelope[j] = x_slice[j]->codomain();
+			envelope = fnc.eval_vector(envelope);
+			for (int j = 0 ; j < x_slice.size() ; j++)
+				v_slice[j]->set_envelope(envelope[j]);
+
+			for (int i = 0 ; i < x.size() ; i++)
+				x_slice[i] = x_slice[i]->next_slice();
+		}
+
+		contract(x,v,time_dom,t_propa,m_report);
+	}
+
 	double CtcIntegration::get_finaltime()
 	{
 		return this->finaltime;
