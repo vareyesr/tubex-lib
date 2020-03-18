@@ -19,56 +19,38 @@ namespace tubex
 		assert(prec >= 0);
 	}
 
-	/*todo: fixpoint not obtained, more than one call needed*/
-	double diam_to_remove = 0;
-	double diam_removed = 0;
-	double ratio_a = 0;
-	double ratio_b = 0;
-	double sum_total = 0 ;
-	int sucess = 0; int total_it = 0;
 
-	void CtcDynCidGuess::contract(TubeVector& x, TubeVector& v, TPropagation t_propa, bool m_report)
+	bool CtcDynCidGuess::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
-		/*check if everything is ok*/
-		assert(x.size() == v.size());
-		assert(x.domain() == v.domain());
-		assert(TubeVector::same_slicing(x, v));
 
+		//checks that the domain of each slice is the same.
+		Interval to_try(x_slice[0]->domain());
+		double total_volume = 0;
+		for (int i = 1 ; i < x_slice.size(); i++){
+			assert(to_try == x_slice[i]->domain());
+			total_volume+=x_slice[i]->volume();
+		}
 
-		double old_volume = x.volume();
-		/*cpu time measurement*/
-		clock_t tStart = clock();
-		/*init all the tubes*/
-		vector<Slice*> x_slice;
-		vector<Slice*> v_slice;
-		if (t_propa & FORWARD)
-			for (int i = 0 ; i < x.size() ; i++){
-				x_slice.push_back(x[i].first_slice());
-				v_slice.push_back(v[i].first_slice());
-			}
-		else if (t_propa & BACKWARD)
-			for (int i = 0 ; i < x.size() ; i++){
-				x_slice.push_back(x[i].last_slice());
-				v_slice.push_back(v[i].last_slice());
-			}
-
-		/*for each tube, go all over the slices*/
-		while(x_slice[0] != NULL){
-			bool fix_point_n;
-
+		bool fix_point_l;
+		bool first_iteration = true;
+		do{
+			fix_point_l = false;
 			/*with the bounds of each variable compute the impact on the output door*/
 			vector<Slice> x_slice_bounds;
 			vector<Slice> v_slice_bounds;
 			x_slice_bounds.clear(); v_slice_bounds.clear();
-			for (int i = 0 ; i < x.size() ; i++){
+
+			for (int i = 0 ; i < x_slice.size() ; i++){
 				x_slice_bounds.push_back(*x_slice[i]);
 				v_slice_bounds.push_back(*v_slice[i]);
 			}
 
+			/*Guess procedure, just using the bounds*/
+			bool fix_point_n;
 			do{
 				fix_point_n = false;
 				/*work for each dimension*/
-				for (int i = 0 ; i < x.size() ;i++){
+				for (int i = 0 ; i < x_slice.size() ;i++){
 
 					std::vector<ibex::Interval> x_subslices;
 					x_subslices.clear();
@@ -79,6 +61,7 @@ namespace tubex
 					Interval hull_codomain_x = Interval::EMPTY_SET; Interval hull_codomain_v = Interval::EMPTY_SET;
 
 					for (int j = 0 ; j < x_subslices.size() ; j++){
+
 						/*Temporal slices on $x$ and $v$*/
 						Slice aux_slice_x(x_slice_bounds[i]);
 						Slice aux_slice_v(v_slice_bounds[i]);
@@ -87,8 +70,10 @@ namespace tubex
 							aux_slice_x.set_input_gate(x_subslices[j]);
 						else if (t_propa & BACKWARD)
 							aux_slice_x.set_output_gate(x_subslices[j]);
+
 						/*Fixpoint for each sub-slice at each tube*/
 						double sx;
+
 						/*without polygons*/
 						if (m_fast_mode)
 							ctc_deriv.set_fast_mode(true);
@@ -101,18 +86,22 @@ namespace tubex
 						} while(sx-aux_slice_x.volume()>get_prec());
 
 
-						/*The union of the current Slice is made.*/
+						/*The union of the current guess is made.*/
 						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
 						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |= aux_slice_v.output_gate();
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
+
 					}
 
 					double volume = x_slice_bounds[i].volume();
 
-					/*Replacing the old domains with the new ones*/
+					/*Replacing the slice with impact of the output (either the input) gates in all the dimensions*/
 					x_slice_bounds[i].set_envelope(hull_codomain_x);  v_slice_bounds[i].set_envelope(hull_codomain_v);
 					x_slice_bounds[i].set_input_gate(hull_input_x); v_slice_bounds[i].set_input_gate(hull_input_v);
 					x_slice_bounds[i].set_output_gate(hull_output_x); v_slice_bounds[i].set_output_gate(hull_output_v);
+
+					/*empty test*/
+					if (x_slice_bounds[i].is_empty()) return false;
 
 					if (volume > x_slice_bounds[i].volume())
 						fix_point_n = true;
@@ -121,52 +110,47 @@ namespace tubex
 			} while(fix_point_n);
 
 			/*3B part*/
-			for (int i = 0 ; i < x.size() ; i++){
+			for (int i = 0 ; i < x_slice.size() ; i++){
+				double aux_envelope = x_slice[i]->codomain().diam();
 				Interval remove_ub,remove_lb;
 				if (t_propa & FORWARD){
-					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-40,x_slice[i]->output_gate().ub());
-					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-40);
+					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-100,x_slice[i]->output_gate().ub());
+					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-100);
 				}
 				else if (t_propa & BACKWARD){
-					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-40,x_slice[i]->input_gate().ub());
-					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-40);
+					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-100,x_slice[i]->input_gate().ub());
+					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-100);
 				}
-				ratio_a = x_slice[i]->output_gate().diam() + ratio_a;
-				if (remove_ub.diam()>1e-7)
+
+				//todo: check if necessary
+				if (remove_ub.diam()>1e-8){
 					var3Bcheck(remove_ub,ub,i,x_slice,v_slice,t_propa);
-				if (remove_lb.diam()>1e-7)
+					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+					ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
+					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+				}
+				if (remove_lb.diam()>1e-8){
 					var3Bcheck(remove_lb,lb,i,x_slice,v_slice,t_propa);
-
-				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
-				ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
-				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
-				ratio_b = x_slice[i]->output_gate().diam() + ratio_b;
-				total_it++;
-				sum_total = ratio_b/ratio_a+sum_total;
-			}
-
-			/*Move to the next Slice*/
-			if (t_propa & FORWARD){
-				for (int i = 0 ; i < x.size() ; i++){
-					x_slice[i] = x_slice[i]->next_slice();
-					v_slice[i] = v_slice[i]->next_slice();
+					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+					ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
+					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 				}
+
+				/*empty test*/
+				if (x_slice[i]->is_empty()) return false;
+				if (aux_envelope > x_slice[i]->codomain().diam())
+					fix_point_l = true;
 			}
-			else if (t_propa & BACKWARD){
-				for (int i = 0 ; i < x.size() ; i++){
-					x_slice[i] = x_slice[i]->prev_slice();
-					v_slice[i] = v_slice[i]->prev_slice();
-				}
-			}
-		}
-		if (m_report)
-			report(tStart,x,old_volume);
+			if ((first_iteration) && !(fix_point_l))
+				return false;
+			first_iteration = false;
+		} while (fix_point_l);
+
+		return true;
 	}
-
 
 	void CtcDynCidGuess::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
-
 		/*envelope*/
 		IntervalVector envelope(x_slice.size());
 
@@ -187,6 +171,15 @@ namespace tubex
 	double CtcDynCidGuess::get_prec()
 	{
 		return this->prec;
+	}
+
+	void CtcDynCidGuess::change_prec(double prec){
+		this->prec = prec;
+	}
+
+	void CtcDynCidGuess::change_bisections(int bisections)
+	{
+		this->bisections = bisections;
 	}
 
 	void CtcDynCidGuess::create_slices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)
@@ -211,16 +204,9 @@ namespace tubex
 		}
 	}
 
-	void CtcDynCidGuess::change_bisections(int bisections)
-	{
-		this->bisections = bisections;
-	}
-
 	void CtcDynCidGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
 
-		diam_to_remove = diam_to_remove + remove_bound.diam();
-		double to_remove = remove_bound.diam();
 		ctc_deriv.set_fast_mode(false);
 		bool fix_point_n;
 		vector<Slice> x_slice_bounds;
@@ -258,8 +244,6 @@ namespace tubex
 					else if (bound == lb)
 						x_slice[pos]->set_input_gate(Interval(remove_bound.ub(),x_slice[pos]->input_gate().ub()));
 				}
-				diam_removed = diam_removed +remove_bound.diam();
-				sucess++;
 				return;
 			}
 		}
@@ -301,7 +285,6 @@ namespace tubex
 				double sx;
 				CtcDeriv ctc_deriv;
 //				/*without polygons*/
-
 				do
 				{
 					sx = x_slice_bounds[i].volume();
@@ -327,8 +310,6 @@ namespace tubex
 
 		}
 
-		diam_removed = diam_removed +(to_remove - remove_bound.diam());
-//
 		if (t_propa & FORWARD){
 			if (bound==ub)
 				x_slice[pos]->set_output_gate(Interval(x_slice[pos]->output_gate().lb(),remove_bound.ub()));
@@ -341,39 +322,5 @@ namespace tubex
 			else if (bound==lb)
 				x_slice[pos]->set_input_gate(Interval(remove_bound.lb(),x_slice[pos]->input_gate().ub()));
 		}
-	}
-
-	void CtcDynCidGuess::report(clock_t tStart,TubeVector& x,double old_volume)
-	{
-//			cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
-//			/*CidSlicing does nothing, */
-//			if (old_volume == x.volume()){
-//				cout << "\033[1;31mNo contraction made by 3BGuess!\033[0m\n";
-//				printf("CPU Time spent by 3BGuess: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-//			}
-//			/*CidSlicing contracts the tube*/
-//			else{
-//				double doors_size = 0 ;
-//				int nb_doors = 0;
-//				for (int i = 0 ; i < x.size() ; i++){
-//					Slice* x_slice = x[i].first_slice();
-//					for (int j = 0 ; j < x[i].nb_slices() ; j++){
-//						doors_size +=x_slice->output_gate().diam();
-//						nb_doors++;
-//						x_slice = x_slice->next_slice();
-//					}
-//				}
-//				cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";
-//				printf("CPU Time spent by 3BGuess: %.5f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-//				printf("Old Volume: %.7f\n", old_volume);
-//				printf("New Volume: %.7f\n", x.volume());
-//				printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
-//			}
-		}
-
-
-
-	void CtcDynCidGuess::change_prec(double prec){
-		this->prec = prec;
 	}
 }

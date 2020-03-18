@@ -13,35 +13,53 @@
 #include "ibex_Function.h"
 #include "tubex_CtcDeriv.h"
 #include <vector>
-#include <time.h>
+#include <cmath>
+#include <ctime>
 
 
 namespace tubex
 {
 	class CtcDynCidGuess : public Ctc{
-		enum {lb,ub};
+
+	enum {lb,ub};
 
 	public:
-
+		/*
+		 *
+		 */
 		CtcDynCidGuess(ibex::Fnc& fnc,int bisections=20, double prec=1e-7);
-
-		void contract(TubeVector& x, TubeVector& v, TPropagation t_propa = FORWARD | BACKWARD, bool report=true);
-
+		/*
+		 *
+		 */
+		bool contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa);
+		/*
+		 *
+		 */
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
-
-		int get_bisections();
-
-		double get_prec();
-
+		/*
+		 *
+		 */
 		void create_slices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
-
+		/*
+		 *
+		 */
+		int get_bisections();
+		/*
+		 *
+		 */
+		double get_prec();
+		/*
+		 *
+		 */
 		void change_bisections(int bisections);
-
+		/*
+		 *
+		 */
 		void change_prec(double prec);
-
+		/*
+		 *
+		 */
 		void var3Bcheck(ibex::Interval remove_ub,int bound, int pos ,std::vector<Slice*> & x_slice,std::vector<Slice*> v_slice,TPropagation t_propa);
-
-		void report(clock_t tStart,TubeVector& x, double old_volume);
 
 	private:
 		int bisections;
