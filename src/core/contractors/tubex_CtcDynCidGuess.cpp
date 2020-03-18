@@ -24,11 +24,12 @@ namespace tubex
 	{
 		//checks that the domain of each slice is the same.
 		Interval to_try(x_slice[0]->domain());
-		double total_volume = 0;
+//		bool puntual_gate = true;
 
-		for (int i = 1 ; i < x_slice.size(); i++){
+		for (int i = 0 ; i < x_slice.size(); i++){
 			assert(to_try == x_slice[i]->domain());
-			total_volume+=x_slice[i]->volume();
+//			if (t_propa & FORWARD)
+//				if (x_slice[0]->input_gate().diam() != 0) puntual_gate = false;
 		}
 
 		bool fix_point_l;
@@ -139,6 +140,8 @@ namespace tubex
 				if (aux_envelope > x_slice[i]->codomain().diam())
 					fix_point_l = true;
 			}
+
+
 			if ((first_iteration) && !(fix_point_l))
 					return false;
 
@@ -186,18 +189,16 @@ namespace tubex
 
 		/*Varcid in the input gate*/
 		if (t_propa & FORWARD){
+			x_slices.push_back(Interval(x_slice.input_gate().lb()));
 			if (x_slice.input_gate().diam() != 0){
-				x_slices.push_back(Interval(x_slice.input_gate().lb()));
 				x_slices.push_back(Interval(x_slice.input_gate().ub()));
 			}
 		}
 
 		/*Varcid in the output gate*/
 		else if (t_propa & BACKWARD){
-			if (x_slice.output_gate().diam() == 0)
-				x_slices.push_back(Interval(x_slice.output_gate().ub()));
-			else{
-				x_slices.push_back(Interval(x_slice.output_gate().lb()));
+			x_slices.push_back(Interval(x_slice.output_gate().lb()));
+			if (x_slice.output_gate().diam() != 0){
 				x_slices.push_back(Interval(x_slice.output_gate().ub()));
 			}
 		}
