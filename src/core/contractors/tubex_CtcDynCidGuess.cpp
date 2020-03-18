@@ -114,22 +114,22 @@ namespace tubex
 				double aux_envelope = x_slice[i]->codomain().diam();
 				Interval remove_ub,remove_lb;
 				if (t_propa & FORWARD){
-					remove_ub = Interval(x_slice_bounds[i].output_gate().ub()+1e-100,x_slice[i]->output_gate().ub());
-					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb()-1e-100);
+					remove_ub = Interval(x_slice_bounds[i].output_gate().ub(),x_slice[i]->output_gate().ub());
+					remove_lb = Interval(x_slice[i]->output_gate().lb(),x_slice_bounds[i].output_gate().lb());
 				}
 				else if (t_propa & BACKWARD){
-					remove_ub = Interval(x_slice_bounds[i].input_gate().ub()+1e-100,x_slice[i]->input_gate().ub());
-					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb()-1e-100);
+					remove_ub = Interval(x_slice_bounds[i].input_gate().ub(),x_slice[i]->input_gate().ub());
+					remove_lb = Interval(x_slice[i]->input_gate().lb(),x_slice_bounds[i].input_gate().lb());
 				}
 
 				//todo: check if necessary
-				if (remove_ub.diam()>1e-8){
+				if (remove_ub.diam()>0){
 					var3Bcheck(remove_ub,ub,i,x_slice,v_slice,t_propa);
 					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 					ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
 					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 				}
-				if (remove_lb.diam()>1e-8){
+				if (remove_lb.diam()>0){
 					var3Bcheck(remove_lb,lb,i,x_slice,v_slice,t_propa);
 					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 					ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
