@@ -23,14 +23,23 @@ namespace tubex
 	bool CtcDynCidGuess::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
 
+
 		//checks that the domain of each slice is the same.
 		Interval to_try(x_slice[0]->domain());
 		double total_volume = 0;
+
 		for (int i = 1 ; i < x_slice.size(); i++){
 			assert(to_try == x_slice[i]->domain());
 			total_volume+=x_slice[i]->volume();
 		}
-
+		if (t_propa & FORWARD){
+			if ((x_slice.size()==1) && x_slice[0]->input_gate().diam()==0)
+				return true;
+		}
+		else if (t_propa & BACKWARD){
+			if ((x_slice.size()==1) && x_slice[0]->output_gate().diam()==0)
+				return true;
+		}
 		bool fix_point_l;
 		bool first_iteration = true;
 		do{
@@ -142,7 +151,8 @@ namespace tubex
 					fix_point_l = true;
 			}
 			if ((first_iteration) && !(fix_point_l))
-				return false;
+					return false;
+
 			first_iteration = false;
 		} while (fix_point_l);
 

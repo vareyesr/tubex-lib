@@ -27,7 +27,7 @@ namespace tubex
 		/*
 		 *
 		 */
-		CtcDynCidGuess(ibex::Fnc& fnc,int bisections=20, double prec=0);
+		CtcDynCidGuess(ibex::Fnc& fnc,int bisections=10, double prec=0);
 		/*
 		 *
 		 */
