@@ -30,7 +30,7 @@ namespace tubex
 		 * After all the s_cid are treated, the Hull is applied and intersected with the
 		 * corresponding slice. By default it uses scid=8 and prec=0
 		 */
-		CtcDynCid(ibex::Fnc& fnc,int scid=8, double prec=0.);
+		CtcDynCid(tubex::Function& fnc,int scid=8, double prec=0.);
 		/*
 		 * This method performs a contraction at the Slice level.
 		 * Note that the timesteps between the Tubes of x and v must be identically the same.
@@ -66,7 +66,7 @@ namespace tubex
 	private:
 		int scid;
 		double prec;
-		ibex::Fnc& fnc;
+		tubex::Function& fnc;
 		CtcDeriv ctc_deriv;
 	};
 }

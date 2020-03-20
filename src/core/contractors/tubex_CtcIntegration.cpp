@@ -16,13 +16,14 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcIntegration::CtcIntegration(ibex::Fnc& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr)
+	CtcIntegration::CtcIntegration(tubex::Function& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1)
 	{
 
 	}
 
 	void CtcIntegration::contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool m_report)
 	{
+
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
@@ -140,7 +141,7 @@ namespace tubex
 			IntervalVector envelope(x_slice.size());
 			for (int j = 0 ; j < x_slice.size() ; j++)
 				envelope[j] = x_slice[j]->codomain();
-			envelope = fnc.eval_vector(envelope);
+			envelope = fnc.eval_slice(x_slice[0]->domain(),envelope);
 			for (int j = 0 ; j < x_slice.size() ; j++)
 				v_slice[j]->set_envelope(envelope[j]);
 

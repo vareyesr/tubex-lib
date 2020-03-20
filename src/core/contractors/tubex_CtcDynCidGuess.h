@@ -27,7 +27,7 @@ namespace tubex
 		/*
 		 *
 		 */
-		CtcDynCidGuess(ibex::Fnc& fnc,int bisections=10, double prec=0);
+		CtcDynCidGuess(tubex::Function& fnc,int bisections=10, double prec=0);
 		/*
 		 *
 		 */
@@ -64,7 +64,7 @@ namespace tubex
 	private:
 		int bisections;
 		double prec;
-		ibex::Fnc& fnc;
+		tubex::Function& fnc;
 		CtcDeriv ctc_deriv;
 	};
 }

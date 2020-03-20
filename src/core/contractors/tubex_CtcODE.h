@@ -12,7 +12,7 @@
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 namespace tubex
 {

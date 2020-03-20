@@ -13,7 +13,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcDynCid::CtcDynCid(ibex::Fnc& fnc,int scid, double prec): fnc(fnc), scid(scid), prec(prec)
+	CtcDynCid::CtcDynCid(tubex::Function& fnc,int scid, double prec): fnc(fnc), scid(scid), prec(prec)
 	{
 		/*check inputs*/
 		assert(scid > 0.);
@@ -119,7 +119,7 @@ namespace tubex
 			else
 				envelope[i] = x_slice[i]->codomain();
 		}
-		v.set_envelope(fnc.eval_vector(envelope)[pos]);
+		v.set_envelope(fnc.eval_slice(x.domain(),envelope)[pos]);
 	}
 
 	double CtcDynCid::get_scid()

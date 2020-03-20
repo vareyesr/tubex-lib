@@ -13,7 +13,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcDynCidGuess::CtcDynCidGuess(ibex::Fnc& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec)
+	CtcDynCidGuess::CtcDynCidGuess(tubex::Function& fnc,int bisections, double prec): fnc(fnc), bisections(bisections), prec(prec)
 	{
 		assert(bisections >= 0.);
 		assert(prec >= 0);
@@ -101,7 +101,6 @@ namespace tubex
 					x_slice_bounds[i].set_input_gate(hull_input_x); v_slice_bounds[i].set_input_gate(hull_input_v);
 					x_slice_bounds[i].set_output_gate(hull_output_x); v_slice_bounds[i].set_output_gate(hull_output_v);
 
-
 					if (volume > x_slice_bounds[i].volume())
 						fix_point_n = true;
 
@@ -141,7 +140,6 @@ namespace tubex
 					fix_point_l = true;
 			}
 
-
 			if ((first_iteration) && !(fix_point_l))
 					return false;
 
@@ -162,7 +160,7 @@ namespace tubex
 			else
 				envelope[i] = x_slice[i]->codomain();
 		}
-			v.set_envelope(fnc.eval_vector(envelope)[pos]);
+			v.set_envelope(fnc.eval_slice(x.domain(),envelope)[pos]);
 	}
 
 	int CtcDynCidGuess::get_bisections()
@@ -263,7 +261,7 @@ namespace tubex
 //			else if (bound == lb)
 //				remove_bound = Interval(x_slice_bounds[pos].input_gate().lb(),remove_bound.ub());
 //		}
-		for (int k = 0 ;  k < 10 ; k++){
+		for (int k = 0 ;  k < get_bisections() ; k++){
 			/*restore domains*/
 			x_slice_bounds.clear(); v_slice_bounds.clear();
 			for (int i = 0 ; i < x_slice.size() ; i++){
