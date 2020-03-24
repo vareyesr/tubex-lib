@@ -10,8 +10,6 @@
 
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
-#include "ibex_Function.h"
-#include "tubex_CtcDeriv.h"
 #include <vector>
 #include <ctime>
 
@@ -52,10 +50,16 @@ namespace tubex
 		 */
 		double get_finaltime();
 
+		void set_picard_mode(bool slice_picard = false);
+
+		void set_incremental_mode(bool incremental_mode = true);
+
 	private:
+		bool m_incremental_mode = true;
 		Ctc* slice_ctr;
 		tubex::Function& fnc;
 		double finaltime;
+		bool slice_picard = false; // If true and a slice is unbounded, a call to Picard Slice is applied.
 	};
 }
 

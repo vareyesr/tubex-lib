@@ -70,7 +70,7 @@ namespace tubex
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 
-			/*todo: call picard to make it bounded*/
+			/*todo: checking if correct..*/
 			for (int i = 0 ; i < v_slice.size() ; i++){
 				if (v_slice[i]->codomain().is_unbounded())
 					return;
@@ -83,7 +83,8 @@ namespace tubex
 						finaltime = x_slice[0]->domain().lb();
 					else if (t_propa & BACKWARD)
 						finaltime = x_slice[0]->domain().ub();
-					return;
+					if (m_incremental_mode)
+						return;
 				}
 			}
 
@@ -94,12 +95,20 @@ namespace tubex
 						finaltime = x_slice[0]->domain().lb();
 					else if (t_propa & BACKWARD)
 						finaltime = x_slice[0]->domain().ub();
-					return;
+					if (m_incremental_mode)
+						return;
 				}
 			}
 			else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
 				CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
-				// todo: implement the contraction
+				if (!basic->contract(x_slice,v_slice,t_propa)){
+					if (t_propa & FORWARD)
+						finaltime = x_slice[0]->domain().lb();
+					else if (t_propa & BACKWARD)
+						finaltime = x_slice[0]->domain().ub();
+					if (m_incremental_mode)
+						return;
+				}
 			}
 			else{
 				cout << "ERROR: this sub-contractor is not handled by CtcIntegration" << endl;
@@ -155,6 +164,10 @@ namespace tubex
 	double CtcIntegration::get_finaltime()
 	{
 		return this->finaltime;
+	}
+
+	void CtcIntegration::set_incremental_mode(bool incremental_mode){
+		this->m_incremental_mode = incremental_mode;
 	}
 
 	void CtcIntegration::report(clock_t tStart,TubeVector& x,double old_volume)

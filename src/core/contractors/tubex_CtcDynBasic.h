@@ -23,16 +23,16 @@ namespace tubex
 
 	public:
 
-		CtcDynBasic(ibex::Fnc& fnc, double prec = 0.);
+		CtcDynBasic(tubex::Function& fnc, double prec = 0.);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(Slice& x, Slice& v, TPropagation t_propa);
+		bool contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa);
 		/*
-		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
+		 * ctc_fwd manages to make an evaluation of the current Slices in order to contract and update v
 		 */
-		void ctc_fwd(Slice &x, Slice &v);
+		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
 		/*
 		 *  used to obtain the current precision of the iterative method.
 		 */
@@ -44,7 +44,7 @@ namespace tubex
 
 	private:
 		CtcDeriv ctc_deriv;
-		ibex::Fnc& fnc;
+		tubex::Function& fnc;
 		double prec;
 	};
 }

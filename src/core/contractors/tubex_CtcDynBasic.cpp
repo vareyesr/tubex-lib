@@ -6,30 +6,57 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcDynBasic::CtcDynBasic(ibex::Fnc& fnc, double prec): fnc(fnc), prec(prec)
+	CtcDynBasic::CtcDynBasic(tubex::Function& fnc, double prec): fnc(fnc), prec(prec)
 	{
 		/*check input*/
 		assert(prec >= 0);
 	}
 
-	void CtcDynBasic::contract(Slice& x, Slice& v, TPropagation t_propa)
+	bool CtcDynBasic::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
-		/*check if the domain of x is the same as v*/
-		assert(x.domain() == v.domain());
-//		assert(TubeVector::same_slicing(x, v));
+		/*check if the domains are the same*/
+		Interval to_try(x_slice[0]->domain());
+		for (int i = 1 ; i < x_slice.size(); i++)
+			assert(to_try == x_slice[i]->domain());
 
-		if(m_fast_mode)
-			ctc_deriv.set_fast_mode(true);
+		bool fix_point_n = false;
+		for (int i = 0 ; i < x_slice.size() ; i++){
+			Slice aux_slice_x(*x_slice[i]);
+			Slice aux_slice_v(*v_slice[i]);
 
-		ctc_deriv.contract(x,v,t_propa);
-		ctc_fwd(x,v);
+			ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
+			ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+
+			double volume = x_slice[i]->volume();
+
+			/*Replacing the old domains with the new ones*/
+			x_slice[i]->set_envelope(aux_slice_x.codomain()); v_slice[i]->set_envelope(aux_slice_v.codomain());
+			x_slice[i]->set_input_gate(aux_slice_x.input_gate()); v_slice[i]->set_input_gate(aux_slice_v.input_gate());
+			x_slice[i]->set_output_gate(aux_slice_x.output_gate()); v_slice[i]->set_output_gate(aux_slice_v.output_gate());
+
+			if (x_slice[i]->volume() < volume)
+				fix_point_n = true;
+		}
+
+		/*incrementality test*/
+		if (!fix_point_n)
+			return false;
+
+		return true;
 	}
 
 
-	void CtcDynBasic::ctc_fwd(Slice &x, Slice &v)
+	void CtcDynBasic::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
 		/*envelope*/
-//		v.set_envelope(fnc.eval_vector(x.codomain)[pos]);
+		IntervalVector envelope(x_slice.size());
+		for (int i = 0 ; i < x_slice.size() ; i++){
+			if (i==pos)
+				envelope[i] = x.codomain();
+			else
+				envelope[i] = x_slice[i]->codomain();
+		}
+		v.set_envelope(fnc.eval_slice(x.domain(),envelope)[pos]);
 	}
 
 	double CtcDynBasic::get_prec()
