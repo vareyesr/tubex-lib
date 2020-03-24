@@ -42,7 +42,10 @@ namespace tubex
 		 */
 		void set_prec(double prec);
 
+		void set_reasoning_slice(bool reasoning_slice = true);
+
 	private:
+		bool m_reasoning_slice = true;
 		CtcDeriv ctc_deriv;
 		tubex::Function& fnc;
 		double prec;

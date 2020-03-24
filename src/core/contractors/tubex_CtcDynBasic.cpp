@@ -19,7 +19,11 @@ namespace tubex
 		for (int i = 1 ; i < x_slice.size(); i++)
 			assert(to_try == x_slice[i]->domain());
 
-		bool fix_point_n = false;
+		bool fix_point_n;
+		bool first_iteration = true;
+
+	do{
+		fix_point_n = false;
 		for (int i = 0 ; i < x_slice.size() ; i++){
 			Slice aux_slice_x(*x_slice[i]);
 			Slice aux_slice_v(*v_slice[i]);
@@ -37,6 +41,12 @@ namespace tubex
 			if (x_slice[i]->volume() < volume)
 				fix_point_n = true;
 		}
+
+		if ((first_iteration) && !(fix_point_n))
+			return false;
+		first_iteration = false;
+
+	} while(fix_point_n && m_reasoning_slice);
 
 		/*incrementality test*/
 		if (!fix_point_n)
@@ -67,6 +77,10 @@ namespace tubex
 	void CtcDynBasic::set_prec(double prec)
 	{
 		this->prec = prec;
+	}
+
+	void CtcDynBasic::set_reasoning_slice(bool reasoning_slice){
+		this->m_reasoning_slice = reasoning_slice;
 	}
 }
 
