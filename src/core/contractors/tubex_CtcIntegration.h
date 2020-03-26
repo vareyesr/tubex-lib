@@ -10,6 +10,7 @@
 
 #include "tubex_Ctc.h"
 #include "tubex_Slice.h"
+#include "tubex_CtcPicard.h"
 #include <vector>
 #include <ctime>
 
@@ -50,8 +51,14 @@ namespace tubex
 		 */
 		double get_finaltime();
 
+		/*
+		 * If true, it perform the picard method at the slice level.
+		 */
 		void set_picard_mode(bool slice_picard = false);
 
+		/*
+		 * If true, it contracts the tube until no contraction is obtained at the slice level.
+		 */
 		void set_incremental_mode(bool incremental_mode = true);
 
 	private:
@@ -59,7 +66,7 @@ namespace tubex
 		Ctc* slice_ctr;
 		tubex::Function& fnc;
 		double finaltime;
-		bool slice_picard = false; // If true and a slice is unbounded, a call to Picard Slice is applied.
+		bool m_slice_picard_mode = false;
 	};
 }
 

@@ -65,8 +65,8 @@ namespace tubex
     assert (t_propa == FORWARD || t_propa ==BACKWARD);
     Interval initdomain=x[0].slice_domain(k) ;
     int kfinished;
-    if (t_propa == FORWARD) kfinished=k++;
-    else kfinished=k--;
+    if (t_propa == FORWARD) kfinished=k+1;
+    else kfinished=k-1;
     while (k!= kfinished){
           contract_kth_slices(f, x, k, t_propa);
           // NB: all tube components share the same slicing
@@ -157,7 +157,6 @@ namespace tubex
     assert(f.nb_vars() == f.image_dim());
     assert(f.nb_vars() == tube.size());
     assert(k >= 0 && k < tube.nb_slices());
-
     if(tube.is_empty())
       return;
 

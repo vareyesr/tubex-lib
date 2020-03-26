@@ -36,6 +36,8 @@ namespace tubex
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
 
+
+
 		/*set where to start with the contraction in the dom=[t0,tf]*/
 		/*if the contraction is from t=t0*/
 		if (time_dom <= x.domain().lb()){
@@ -67,54 +69,92 @@ namespace tubex
 			}
 		}
 
+
+
+		/*counter for slices*/
+		int nb_slices;
+		if (t_propa & FORWARD) nb_slices = 0;
+		else if (t_propa & BACKWARD) nb_slices = x.nb_slices()-1;
+
+		CtcPicard ctc_picard;
+		ctc_picard.set_picard_subslices(10); //todo: setter for nb of subslices
+
+		/*todo: how to start from any point inside the tube for picard?*/
+		if (m_slice_picard_mode){
+			if ((time_dom == x.domain().lb()) || (time_dom == x.domain().lb()))
+				m_slice_picard_mode = true;
+			else
+				m_slice_picard_mode = false;
+		}
+
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
 
-			/*todo: checking if correct..*/
+			/*if something is unbounded return*/
+			if (m_slice_picard_mode){
+				for (int i = 0 ; i < v_slice.size() ; i++){
+					if (v_slice[i]->codomain().is_unbounded()){
+						ctc_picard.contract_picard_slice(fnc,x,nb_slices,t_propa);
+						v=fnc.eval_vector(x);
+						v_slice.clear();
+						for (int i = 0 ; i < x.size() ; i++)
+							v_slice.push_back(v[i].slice(nb_slices));
+					}
+				}
+			}
+
+			bool contract_slice = true;
 			for (int i = 0 ; i < v_slice.size() ; i++){
-				if (v_slice[i]->codomain().is_unbounded())
+				if (v_slice[i]->codomain().is_unbounded()){
+					if (m_incremental_mode)
+						return;
+					else{
+						contract_slice = false;
+						break;
+					}
+				}
+			}
+
+			if (contract_slice){
+				if(dynamic_cast <CtcDynCid*> (slice_ctr)){
+					CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
+					if (!cid->contract(x_slice,v_slice,t_propa)){
+						if (t_propa & FORWARD)
+							finaltime = x_slice[0]->domain().lb();
+						else if (t_propa & BACKWARD)
+							finaltime = x_slice[0]->domain().ub();
+						if (m_incremental_mode)
+							return;
+					}
+				}
+
+				else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
+					CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
+					if (!cidguess->contract(x_slice,v_slice,t_propa)){
+						if (t_propa & FORWARD)
+							finaltime = x_slice[0]->domain().lb();
+						else if (t_propa & BACKWARD)
+							finaltime = x_slice[0]->domain().ub();
+						if (m_incremental_mode)
+							return;
+					}
+				}
+				else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
+					CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
+					if (!basic->contract(x_slice,v_slice,t_propa)){
+						if (t_propa & FORWARD)
+							finaltime = x_slice[0]->domain().lb();
+						else if (t_propa & BACKWARD)
+							finaltime = x_slice[0]->domain().ub();
+						if (m_incremental_mode)
+							return;
+					}
+				}
+				else{
+					cout << "ERROR: this sub-contractor is not handled by CtcIntegration" << endl;
 					return;
-			}
-
-			if(dynamic_cast <CtcDynCid*> (slice_ctr)){
-				CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
-				if (!cid->contract(x_slice,v_slice,t_propa)){
-					if (t_propa & FORWARD)
-						finaltime = x_slice[0]->domain().lb();
-					else if (t_propa & BACKWARD)
-						finaltime = x_slice[0]->domain().ub();
-					if (m_incremental_mode)
-						return;
 				}
 			}
-
-			else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
-				CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
-				if (!cidguess->contract(x_slice,v_slice,t_propa)){
-					if (t_propa & FORWARD)
-						finaltime = x_slice[0]->domain().lb();
-					else if (t_propa & BACKWARD)
-						finaltime = x_slice[0]->domain().ub();
-					if (m_incremental_mode)
-						return;
-				}
-			}
-			else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
-				CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
-				if (!basic->contract(x_slice,v_slice,t_propa)){
-					if (t_propa & FORWARD)
-						finaltime = x_slice[0]->domain().lb();
-					else if (t_propa & BACKWARD)
-						finaltime = x_slice[0]->domain().ub();
-					if (m_incremental_mode)
-						return;
-				}
-			}
-			else{
-				cout << "ERROR: this sub-contractor is not handled by CtcIntegration" << endl;
-				return;
-			}
-
 			/*continue with the next slice*/
 			if (t_propa & FORWARD){
 				for (int i = 0 ; i < x.size() ; i++){
@@ -128,7 +168,12 @@ namespace tubex
 					v_slice[i] = v_slice[i]->prev_slice();
 				}
 			}
+			//for picard_slice
+			if (t_propa & FORWARD) nb_slices++;
+			else if (t_propa & BACKWARD) nb_slices--;
 		}
+
+
 		if (t_propa & FORWARD)
 			finaltime = x.domain().ub();
 		else if (t_propa & BACKWARD)
@@ -169,6 +214,15 @@ namespace tubex
 	void CtcIntegration::set_incremental_mode(bool incremental_mode){
 		this->m_incremental_mode = incremental_mode;
 	}
+
+	void CtcIntegration::set_picard_mode(bool slice_picard_mode){
+		this->m_slice_picard_mode = slice_picard_mode;
+	}
+
+//	void CtcIntegration::update_position(bool slice_picard_mode){
+//			this->m_slice_picard_mode = slice_picard_mode;
+//	}
+
 
 	void CtcIntegration::report(clock_t tStart,TubeVector& x,double old_volume)
 	{
