@@ -28,9 +28,16 @@ namespace tubex
 			Slice aux_slice_x(*x_slice[i]);
 			Slice aux_slice_v(*v_slice[i]);
 
-			ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
-			ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
-
+			double sx;
+			/*without polygons*/
+			if(m_fast_mode)
+				ctc_deriv.set_fast_mode(true);
+			do
+			{
+				sx = aux_slice_x.volume();
+				ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
+				ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+			} while (sx - aux_slice_x.volume() > get_prec());
 			double volume = x_slice[i]->volume();
 
 			/*Replacing the old domains with the new ones*/
@@ -46,11 +53,7 @@ namespace tubex
 			return false;
 		first_iteration = false;
 
-	} while(fix_point_n && m_reasoning_slice);
-
-		/*incrementality test*/
-		if (!fix_point_n)
-			return false;
+	} while(fix_point_n);
 
 		return true;
 	}

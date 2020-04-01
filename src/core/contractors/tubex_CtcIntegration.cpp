@@ -81,7 +81,7 @@ namespace tubex
 
 		/*todo: how to start from any point inside the tube for picard?*/
 		if (m_slice_picard_mode){
-			if ((time_dom == x.domain().lb()) || (time_dom == x.domain().lb()))
+			if ((time_dom == x.domain().lb()) || (time_dom == x.domain().ub()))
 				m_slice_picard_mode = true;
 			else
 				m_slice_picard_mode = false;
@@ -99,6 +99,7 @@ namespace tubex
 						v_slice.clear();
 						for (int i = 0 ; i < x.size() ; i++)
 							v_slice.push_back(v[i].slice(nb_slices));
+						break;
 					}
 				}
 			}

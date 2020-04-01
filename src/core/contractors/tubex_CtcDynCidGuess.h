@@ -27,7 +27,7 @@ namespace tubex
 		/*
 		 *
 		 */
-		CtcDynCidGuess(tubex::Function& fnc,int bisections=10, double prec=0);
+		CtcDynCidGuess(tubex::Function& fnc, double prec=0);
 		/*
 		 *
 		 */
@@ -39,19 +39,11 @@ namespace tubex
 		/*
 		 *
 		 */
-		void create_slices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
-		/*
-		 *
-		 */
-		int get_bisections();
+		void create_slices(Slice & x_slice, std::vector<double> & slices, TPropagation t_propa);
 		/*
 		 *
 		 */
 		double get_prec();
-		/*
-		 *
-		 */
-		void change_bisections(int bisections);
 		/*
 		 *
 		 */
@@ -61,8 +53,9 @@ namespace tubex
 		 */
 		void var3Bcheck(ibex::Interval remove_ub,int bound, int pos ,std::vector<Slice*> & x_slice,std::vector<Slice*> v_slice,TPropagation t_propa);
 
+
+
 	private:
-		int bisections;
 		double prec;
 		tubex::Function& fnc;
 		CtcDeriv ctc_deriv;
