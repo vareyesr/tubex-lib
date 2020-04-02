@@ -88,7 +88,7 @@ namespace tubex
 						} while(sx-aux_slice_x.volume()>get_prec());
 
 						/*The union of the current guess is made.*/
-						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
+//						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
 						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |=aux_slice_v.output_gate();
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
 					}
@@ -97,7 +97,7 @@ namespace tubex
 
 					/*Intersection in all the dimensions*/
 					x_slice_bounds[i].set_envelope(hull_codomain_x & x_slice_bounds[i].codomain() );  v_slice_bounds[i].set_envelope(hull_codomain_v & v_slice_bounds[i].codomain());
-					x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
+//					x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
 					x_slice_bounds[i].set_output_gate(hull_output_x & x_slice_bounds[i].output_gate()); v_slice_bounds[i].set_output_gate(hull_output_v & x_slice_bounds[i].output_gate());
 
 					if (volume != x_slice_bounds[i].volume())
