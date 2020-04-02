@@ -38,7 +38,7 @@ namespace tubex
 			/*with the bounds of each variable compute the impact on the output door*/
 			vector<Slice> x_slice_bounds;
 			vector<Slice> v_slice_bounds;
-			x_slice_bounds.clear(); v_slice_bounds.clear();
+//			x_slice_bounds.clear(); v_slice_bounds.clear();
 
 			for (int i = 0 ; i < x_slice.size() ; i++){
 				x_slice_bounds.push_back(*x_slice[i]);
@@ -50,11 +50,13 @@ namespace tubex
 			do{
 				fix_point_n = false;
 				/*work for each dimension*/
+
 				for (int i = 0 ; i < x_slice.size() ;i++){
 
 					std::vector<double> x_subslices;
 					x_subslices.clear();
 					create_slices(x_slice_bounds[i],x_subslices, t_propa);
+
 
 					Interval hull_input_x = Interval::EMPTY_SET; Interval hull_input_v = Interval::EMPTY_SET;
 					Interval hull_output_x = Interval::EMPTY_SET; Interval hull_output_v = Interval::EMPTY_SET;
@@ -85,24 +87,21 @@ namespace tubex
 
 						} while(sx-aux_slice_x.volume()>get_prec());
 
-
 						/*The union of the current guess is made.*/
 						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
-						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |= aux_slice_v.output_gate();
+						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |=aux_slice_v.output_gate();
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
-
 					}
 
 					double volume = x_slice_bounds[i].volume();
 
-					/*Replacing the slice with impact of the output (either the input) gates in all the dimensions*/
-					x_slice_bounds[i].set_envelope(hull_codomain_x);  v_slice_bounds[i].set_envelope(hull_codomain_v);
-					x_slice_bounds[i].set_input_gate(hull_input_x); v_slice_bounds[i].set_input_gate(hull_input_v);
-					x_slice_bounds[i].set_output_gate(hull_output_x); v_slice_bounds[i].set_output_gate(hull_output_v);
+					/*Intersection in all the dimensions*/
+					x_slice_bounds[i].set_envelope(hull_codomain_x & x_slice_bounds[i].codomain() );  v_slice_bounds[i].set_envelope(hull_codomain_v & v_slice_bounds[i].codomain());
+					x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
+					x_slice_bounds[i].set_output_gate(hull_output_x & x_slice_bounds[i].output_gate()); v_slice_bounds[i].set_output_gate(hull_output_v & x_slice_bounds[i].output_gate());
 
-					if (volume > x_slice_bounds[i].volume())
+					if (volume != x_slice_bounds[i].volume())
 						fix_point_n = true;
-
 				}
 			} while(fix_point_n);
 
@@ -129,7 +128,7 @@ namespace tubex
 				}
 				/*to update domains*/
 				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
-				ctc_fwd(*x_slice[i], *v_slice[i], x_slice, v_slice, i);
+				ctc_fwd(*x_slice[i],*v_slice[i], x_slice, v_slice, i);
 				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 
 				/*empty test*/
@@ -178,7 +177,6 @@ namespace tubex
 		if (t_propa & FORWARD){
 			x_slices.push_back(x_slice.input_gate().lb());
 			x_slices.push_back(x_slice.input_gate().ub());
-
 		}
 
 		/*Varcid in the output gate*/
