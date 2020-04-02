@@ -39,7 +39,7 @@ namespace tubex
 		/*
 		 *
 		 */
-		void create_slices(Slice & x_slice, std::vector<double> & slices, TPropagation t_propa);
+		void create_slices(Slice & x_slice, std::vector<ibex::Interval> & slices, TPropagation t_propa);
 		/*
 		 *
 		 */

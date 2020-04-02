@@ -22,7 +22,6 @@ namespace tubex
 	{
 		//checks that the domain of each slice is the same.
 		Interval to_try(x_slice[0]->domain());
-//		bool puntual_gate = true;
 
 		for (int i = 0 ; i < x_slice.size(); i++){
 			assert(to_try == x_slice[i]->domain());
@@ -53,7 +52,7 @@ namespace tubex
 
 				for (int i = 0 ; i < x_slice.size() ;i++){
 
-					std::vector<double> x_subslices;
+					std::vector<Interval> x_subslices;
 					x_subslices.clear();
 					create_slices(x_slice_bounds[i],x_subslices, t_propa);
 
@@ -85,11 +84,15 @@ namespace tubex
 							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 							ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 
-						} while(sx-aux_slice_x.volume()>get_prec());
+						} while(sx-aux_slice_x.volume()>0);
 
 						/*The union of the current guess is made.*/
-//						hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
-						hull_output_x |= aux_slice_x.output_gate(); hull_output_v |=aux_slice_v.output_gate();
+						if (t_propa & BACKWARD){
+							hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
+						}
+						if (t_propa & FORWARD){
+							hull_output_x |= aux_slice_x.output_gate(); hull_output_v |=aux_slice_v.output_gate();
+						}
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
 					}
 
@@ -97,8 +100,12 @@ namespace tubex
 
 					/*Intersection in all the dimensions*/
 					x_slice_bounds[i].set_envelope(hull_codomain_x & x_slice_bounds[i].codomain() );  v_slice_bounds[i].set_envelope(hull_codomain_v & v_slice_bounds[i].codomain());
-//					x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
-					x_slice_bounds[i].set_output_gate(hull_output_x & x_slice_bounds[i].output_gate()); v_slice_bounds[i].set_output_gate(hull_output_v & x_slice_bounds[i].output_gate());
+					if (t_propa & BACKWARD){
+						x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
+					}
+					else if (t_propa & FORWARD){
+						x_slice_bounds[i].set_output_gate(hull_output_x & x_slice_bounds[i].output_gate()); v_slice_bounds[i].set_output_gate(hull_output_v & x_slice_bounds[i].output_gate());
+					}
 
 					if (volume > x_slice_bounds[i].volume())
 						fix_point_n = true;
@@ -170,19 +177,19 @@ namespace tubex
 		this->prec = prec;
 	}
 
-	void CtcDynCidGuess::create_slices(Slice& x_slice, std::vector<double> & x_slices, TPropagation t_propa)
+	void CtcDynCidGuess::create_slices(Slice& x_slice, std::vector<Interval> & x_slices, TPropagation t_propa)
 	{
 
 		/*Varcid in the input gate*/
 		if (t_propa & FORWARD){
-			x_slices.push_back(x_slice.input_gate().lb());
-			x_slices.push_back(x_slice.input_gate().ub());
+			x_slices.push_back(Interval(x_slice.input_gate().lb()));
+			x_slices.push_back(Interval(x_slice.input_gate().ub()));
 		}
 
 		/*Varcid in the output gate*/
 		else if (t_propa & BACKWARD){
-			x_slices.push_back(x_slice.output_gate().lb());
-			x_slices.push_back(x_slice.output_gate().ub());
+			x_slices.push_back(Interval(x_slice.output_gate().lb()));
+			x_slices.push_back(Interval(x_slice.output_gate().ub()));
 		}
 	}
 
