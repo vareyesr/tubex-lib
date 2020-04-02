@@ -100,7 +100,7 @@ namespace tubex
 //					x_slice_bounds[i].set_input_gate(hull_input_x & x_slice_bounds[i].input_gate()); v_slice_bounds[i].set_input_gate(hull_input_v & v_slice_bounds[i].input_gate());
 					x_slice_bounds[i].set_output_gate(hull_output_x & x_slice_bounds[i].output_gate()); v_slice_bounds[i].set_output_gate(hull_output_v & x_slice_bounds[i].output_gate());
 
-					if (volume != x_slice_bounds[i].volume())
+					if (volume > x_slice_bounds[i].volume())
 						fix_point_n = true;
 				}
 			} while(fix_point_n);
