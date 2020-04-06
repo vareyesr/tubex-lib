@@ -30,6 +30,7 @@ namespace tubex
 		}
 
 		bool fix_point_l;
+		bool m_iter = true;
 		bool first_iteration = true;
 		do{
 
@@ -74,7 +75,7 @@ namespace tubex
 
 						/*Fixpoint for each sub-slice at each tube*/
 						double sx;
-
+						int max_iterations=0;
 						/*without polygons*/
 						if (m_fast_mode)
 							ctc_deriv.set_fast_mode(true);
@@ -83,14 +84,16 @@ namespace tubex
 							sx = aux_slice_x.volume();
 							ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 							ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
+							max_iterations++;
+						} while( (sx-aux_slice_x.volume()>0) && (max_iterations<50));
 
-						} while(sx-aux_slice_x.volume()>0);
+						if (max_iterations < 50) m_iter = false;
 
 						/*The union of the current guess is made.*/
 						if (t_propa & BACKWARD){
 							hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
 						}
-						if (t_propa & FORWARD){
+						else if (t_propa & FORWARD){
 							hull_output_x |= aux_slice_x.output_gate(); hull_output_v |=aux_slice_v.output_gate();
 						}
 						hull_codomain_x |= aux_slice_x.codomain(); hull_codomain_v |= aux_slice_v.codomain();
@@ -148,6 +151,7 @@ namespace tubex
 				return false;
 
 			first_iteration = false;
+			if (!m_iter) fix_point_l = false;
 
 		} while (fix_point_l);
 
@@ -212,12 +216,14 @@ namespace tubex
 		/*try to remove the complete interval*/
 		for (int i = 0 ;  i < x_slice.size() ; i++){
 			double sx;
+			int max_iterations=0;
 			do
 			{
 				sx = x_slice_bounds[i].volume();
 				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
 				ctc_fwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
-			} while(sx-x_slice_bounds[i].volume()>get_prec());
+				max_iterations++;
+			} while((sx-x_slice_bounds[i].volume()>get_prec()) && (max_iterations < 50));
 
 			/*if something is empty means that we can remove the complete interval*/
 			if (x_slice_bounds[i].is_empty()){
