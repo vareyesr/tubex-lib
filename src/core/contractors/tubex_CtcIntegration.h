@@ -13,6 +13,7 @@
 #include "tubex_CtcPicard.h"
 #include <vector>
 #include <ctime>
+#include <utility>
 
 
 namespace tubex
@@ -60,6 +61,9 @@ namespace tubex
 		 * If true, it contracts the tube until no contraction is obtained at the slice level.
 		 */
 		void set_incremental_mode(bool incremental_mode = true);
+
+		/*temporal function (bertrand)*/
+		std::pair< int,std::pair<ibex::Interval,double> > bisection_guess(TubeVector& x, TubeVector& v, tubex::Function& fnc);
 
 	private:
 		bool m_incremental_mode = true;
