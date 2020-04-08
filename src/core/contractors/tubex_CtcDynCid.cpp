@@ -31,6 +31,15 @@ namespace tubex
 		bool fix_point_n;
 		bool first_iteration = true;
 
+		//check if the gates used to contract are bounded
+		for (int i = 0 ; i < x_slice.size(); i++){
+			if ((t_propa & FORWARD) && (x_slice[0]->input_gate().is_unbounded()))
+				return false;
+			else if ((t_propa & BACKWARD) && (x_slice[0]->output_gate().is_unbounded()))
+				return false;
+		}
+
+
 		do{
 			fix_point_n = false;
 			for (int i = 0 ; i < x_slice.size() ; i++){
@@ -68,6 +77,7 @@ namespace tubex
 					/*without polygons*/
 					if(m_fast_mode)
 						ctc_deriv.set_fast_mode(true);
+
 					do
 					{
 						sx = aux_slice_x.volume();
@@ -85,6 +95,7 @@ namespace tubex
 				double aux_envelope = x_slice[i]->codomain().diam();
 
 				/*Replacing the old domains with the new ones*/
+
 				x_slice[i]->set_envelope(hull_codomain_x); v_slice[i]->set_envelope(hull_codomain_v);
 				x_slice[i]->set_input_gate(hull_input_x); v_slice[i]->set_input_gate(hull_input_v);
 				x_slice[i]->set_output_gate(hull_output_x); v_slice[i]->set_output_gate(hull_output_v);
@@ -140,6 +151,10 @@ namespace tubex
 	void CtcDynCid::set_prec(double prec)
 	{
 		this->prec = prec;
+	}
+
+	void PropagationEngine(){
+
 	}
 
 	void CtcDynCid::create_subslices(Slice& x_slice, std::vector<ibex::Interval> & x_slices, TPropagation t_propa)

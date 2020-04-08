@@ -29,6 +29,14 @@ namespace tubex
 //				if (x_slice[0]->input_gate().diam() != 0) puntual_gate = false;
 		}
 
+		//check if the gates used to contract are bounded
+		for (int i = 0 ; i < x_slice.size(); i++){
+			if ((t_propa & FORWARD) && (x_slice[0]->input_gate().is_unbounded()))
+				return false;
+			else if ((t_propa & BACKWARD) && (x_slice[0]->output_gate().is_unbounded()))
+				return false;
+		}
+
 		bool fix_point_l;
 		bool m_iter = true;
 		bool first_iteration = true;
