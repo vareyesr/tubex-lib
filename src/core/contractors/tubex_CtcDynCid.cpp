@@ -59,7 +59,7 @@ namespace tubex
 				FullPropagationEngine(x_slice,v_slice,t_propa);
 			for (int i = 0; i < x_slice.size() ; i++)
 				volume_2= volume_2 + x_slice[i]->volume();
-			if (volume_1 > volume_2) fix_point =true;
+			if (1-(volume_2/volume_1) > get_prec()) fix_point = true;
 		} while (fix_point);
 
 		/*empty test*/
@@ -206,7 +206,7 @@ namespace tubex
 						double size_x = aux_slice_x[variable].codomain().diam();
 						ctc_deriv.contract(aux_slice_x[variable],aux_slice_v[variable],t_propa);
 
-						if (size_x-aux_slice_x[variable].codomain().diam() > this->get_prec()){
+						if ((1-(aux_slice_x[variable].codomain().diam()/size_x)) > this->get_prec()){
 							ctr_var[0] = 1; ctr_var[1] = variable;
 							contractorQ.push_front(ctr_var);
 						}
@@ -217,7 +217,7 @@ namespace tubex
 						ctc_fwd(aux_slice_x[variable], aux_slice_v[variable], aux_slice_x, aux_slice_v, variable);
 
 						/*add the contraints not included in isPresent*/
-						if (size_v-aux_slice_v[variable].codomain().diam() > this->get_prec()){
+						if ((1-(aux_slice_v[variable].codomain().diam()/size_v)) > this->get_prec()){
 							for (int j = 0 ; j < x_slice.size() ; j++ ){
 								if ((!isPresent[j]) && (j!=variable)){
 									ctr_var[0] = 1; ctr_var[1] = j;
@@ -289,7 +289,7 @@ namespace tubex
 					ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 					ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 
-				} while(sx - aux_slice_x.volume() > get_prec());
+				} while((1-(aux_slice_x.volume()/sx)) > get_prec());
 
 				/*The union of the current Slice is made.*/
 				hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();

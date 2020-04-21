@@ -27,7 +27,7 @@ namespace tubex
 		/*
 		 * todo: add comments
 		 */
-		CtcDynCidGuess(tubex::Function& fnc, double prec=0);
+		CtcDynCidGuess(tubex::Function& fnc, double prec=0.);
 		/*
 		 * todo: add comments
 		 */
@@ -75,6 +75,8 @@ namespace tubex
 		*/
 		void AtomicPropagationEngine(std::vector<Slice> & x_slice, std::vector<Slice> & v_slice, TPropagation t_propa);
 
+		void create_corners(std::vector<Slice> x_slices, std::vector< std::vector<double> > & points, TPropagation t_propa);
+		std::vector<std::vector<double>> cart_product (const std::vector<std::vector<double>>& v);
 
 	private:
 		double prec;

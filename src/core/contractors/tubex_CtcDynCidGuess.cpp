@@ -1,5 +1,5 @@
 /*
- *  CtcBox class
+ *  CtcDynCidGuess class
  * ----------------------------------------------------------------------------
  * 	\date       2020
  *  \authors  	Victor Reyes
@@ -71,7 +71,7 @@ namespace tubex
 					FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
 				for (int i = 0; i < x_slice.size() ; i++)
 					volume_2 = volume_2 + x_slice_bounds[i].volume();
-				if (volume_1 > volume_2) fix_point =true;
+				if (1-(volume_2/volume_1) > get_prec()) fix_point = true;
 			} while (fix_point);
 
 
@@ -104,7 +104,7 @@ namespace tubex
 			}
 			for (int i = 0; i < x_slice.size() ; i++)
 				volumex_2 = volumex_2 + x_slice[i]->volume();
-			if (volumex_1 > volumex_2) fix_point2 =true;
+			if (1-(volumex_2/volumex_1) > get_prec()) fix_point2 = true;
 
 			/*incrementality test*/
 			if ((first_iteration) && (volumex_1 == volumex_2))
@@ -189,6 +189,47 @@ namespace tubex
 		}
 	}
 
+	std::vector<std::vector<double>> CtcDynCidGuess::cart_product (const std::vector<std::vector<double>>& v) {
+		std::vector<std::vector<double>> s = {{}};
+	    for (const auto& u : v) {
+	        vector<vector<double>> r;
+	        for (const auto& x : s) {
+	            for (const auto y : u) {
+	                r.push_back(x);
+	                r.back().push_back(y);
+	            }
+	        }
+	        s = move(r);
+	    }
+	    return s;
+	}
+
+	void CtcDynCidGuess::create_corners(std::vector<Slice> x_slices, std::vector< std::vector<double> > & points, TPropagation t_propa){
+
+		std::vector< std::vector<double> > aux_points;
+		//for each dimension, obtain the corresponding corners
+		if (t_propa & FORWARD){
+			for (int i=0 ; i < x_slices.size() ; i++){
+				vector<double> aux;
+				aux.clear();
+				aux.push_back(x_slices[i].input_gate().lb());
+				aux.push_back(x_slices[i].input_gate().ub());
+				aux_points.push_back(aux);
+			}
+		}
+		else if(t_propa & BACKWARD){
+			for (int i=0 ; i < x_slices.size() ; i++){
+				vector<double> aux;
+				aux.clear();
+				aux.push_back(x_slices[i].output_gate().lb());
+				aux.push_back(x_slices[i].output_gate().ub());
+				aux_points.push_back(aux);
+			}
+		}
+		//create the 2n corners
+		points = cart_product(aux_points);
+	}
+
 	void CtcDynCidGuess::var3Bcheck(ibex::Interval remove_bound ,int bound, int pos ,std::vector<Slice*> & x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
 	{
 
@@ -215,7 +256,7 @@ namespace tubex
 				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
 				ctc_fwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 				max_iterations++;
-			} while((sx-x_slice_bounds[i].volume()>get_prec()) && (max_iterations<75) );
+			} while((sx-x_slice_bounds[i].volume() > 0) && (max_iterations<75) );
 			if (max_iterations==75) set_max_it(true);  // max iterations reached
 			/*if something is empty means that we can remove the complete interval*/
 			if (x_slice_bounds[i].is_empty()){
@@ -298,7 +339,7 @@ namespace tubex
 					ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 					ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 					max_iterations++;
-				} while( (sx-aux_slice_x.volume()>0) && (max_iterations<75));
+				} while((1-(aux_slice_x.volume()/sx)) > get_prec() && (max_iterations<75));
 				if (max_iterations==75) set_max_it(true);  // max iterations reached
 				/*The union of the current guess is made.*/
 				if (t_propa & BACKWARD){
@@ -392,7 +433,7 @@ namespace tubex
 							double size_x = aux_slice_x[variable].codomain().diam();
 							ctc_deriv.contract(aux_slice_x[variable],aux_slice_v[variable],t_propa);
 
-							if (size_x-aux_slice_x[variable].codomain().diam() > this->get_prec()){
+							if ((1-(aux_slice_x[variable].codomain().diam()/size_x)) > this->get_prec()){
 								ctr_var[0] = 1; ctr_var[1] = variable;
 								contractorQ.push_front(ctr_var);
 							}
@@ -403,7 +444,7 @@ namespace tubex
 							ctc_fwd(aux_slice_x[variable], aux_slice_v[variable], aux_slice_x, aux_slice_v, variable);
 
 							/*add the contraints not included in isPresent*/
-							if (size_v-aux_slice_v[variable].codomain().diam() > this->get_prec()){
+							if ((1-(aux_slice_v[variable].codomain().diam()/size_v)) > this->get_prec()){
 								for (int j = 0 ; j < x_slice.size() ; j++ ){
 									if ((!isPresent[j]) && (j!=variable)){
 										ctr_var[0] = 1; ctr_var[1] = j;
@@ -433,6 +474,125 @@ namespace tubex
 				}
 			}
 
-
 		}
+
+//	void CtcDynCidGuess::FullPropagationEngine(std::vector<Slice> & x_slice, std::vector<Slice> & v_slice, TPropagation t_propa){
+//
+//		/*create the contractor queue: format contraint - variable, 0: for ctc_deriv, 1 for fwd*/
+//		std::deque< vector<int> > contractorQ;
+//
+//		vector<int> ctr_var;
+//		for (int i = 0 ; i < 2 ; i++) ctr_var.push_back(-1);
+//
+//		/*Initialization contractor array - bool*/
+//		vector<bool > isPresent;
+//
+//		for (int i = 0 ; i < x_slice.size() ; i++){
+//			isPresent.push_back(false);
+//		}
+//
+//		/*going throw all the variables*/
+////		for (int i = 0 ; i < x_slice.size() ; i++){
+//			/*create the sub-slices*/
+//			std::vector< std::vector<double> >  points;
+//			create_corners(x_slice, points, t_propa);
+//
+////			create_slices(x_slice[i],x_subslices, t_propa);
+//
+//			/*Hull for each dimension on x and v*/
+//			vector<Interval> hull_input_x; vector<Interval> hull_input_v;
+//			vector<Interval> hull_output_x; vector<Interval> hull_output_v;
+//			vector<Interval> hull_codomain_x; vector<Interval> hull_codomain_v;
+//
+//			/*Initiliazation*/
+//			for (int j = 0 ; j < x_slice.size() ; j++){
+//				hull_input_x.push_back(Interval::EMPTY_SET); hull_input_v.push_back(Interval::EMPTY_SET);
+//				hull_output_x.push_back(Interval::EMPTY_SET); hull_output_v.push_back(Interval::EMPTY_SET);
+//				hull_codomain_x.push_back(Interval::EMPTY_SET); hull_codomain_v.push_back(Interval::EMPTY_SET);
+//			}
+//
+//			for (int k = 0 ; k < points.size() ; k++){
+//
+//				/*restore with the current domains*/
+//				vector<Slice> aux_slice_x; aux_slice_x.clear();
+//				vector<Slice> aux_slice_v; aux_slice_v.clear();
+//
+//				for (int j = 0 ; j < x_slice.size() ; j++){
+//					aux_slice_x.push_back(x_slice[j]);
+//					aux_slice_v.push_back(v_slice[j]);
+//				}
+//
+//				/*Set the gate depending on the direction of the contraction*/
+//				if (t_propa & FORWARD)
+//					for (int i = 0 ; i < points[k].size() ; i++)
+//						aux_slice_x[i].set_input_gate(points[k][i]);
+//
+//
+//				else if (t_propa & BACKWARD)
+//					for (int i = 0 ; i < points[k].size() ; i++)
+//						aux_slice_x[i].set_output_gate(points[k][i]);
+//
+//
+//				/*push the first element to the contractor queue*/
+//				ctr_var[0] = 0; ctr_var[1] = 0;
+//				contractorQ.push_back(ctr_var);
+//
+//				/*FIFO queue*/
+//				do{
+//					/*get what contractor should be called*/
+//					int contractor = contractorQ.front()[0];
+//					/*get the variable that is going to be contracted*/
+//					int variable = contractorQ.front()[1];
+//					isPresent[variable] = false;
+//					/*pop the first element*/
+//					contractorQ.pop_front();
+//					/*contract*/
+//					if (contractor == 0 ){ //call ctc_deriv
+//						/*save the corresponding domain*/
+//						double size_x = aux_slice_x[variable].codomain().diam();
+//						ctc_deriv.contract(aux_slice_x[variable],aux_slice_v[variable],t_propa);
+//
+//						if (size_x-aux_slice_x[variable].codomain().diam() > this->get_prec()){
+//							ctr_var[0] = 1; ctr_var[1] = variable;
+//							contractorQ.push_front(ctr_var);
+//						}
+//					}
+//					else if (contractor == 1){ //call ctc_fwd
+//						/*save the corresponding domain*/
+//						double size_v = aux_slice_v[variable].codomain().diam();
+//						ctc_fwd(aux_slice_x[variable], aux_slice_v[variable], aux_slice_x, aux_slice_v, variable);
+//
+//						/*add the contraints not included in isPresent*/
+//						if (size_v-aux_slice_v[variable].codomain().diam() > this->get_prec()){
+//							for (int j = 0 ; j < x_slice.size() ; j++ ){
+//								if ((!isPresent[j]) && (j!=variable)){
+//									ctr_var[0] = 1; ctr_var[1] = j;
+//									contractorQ.push_front(ctr_var);
+//									isPresent[j] = true;
+//								}
+//							}
+//							ctr_var[0] = 0; ctr_var[1] = variable;
+//							contractorQ.push_front(ctr_var);
+//						}
+//					}
+//
+//				} while (contractorQ.size() > 0);
+//
+//				/*The union of the current Slice is made*/
+//				for (int j = 0 ; j < x_slice.size() ; j++){
+//					hull_input_x[j] |= aux_slice_x[j].input_gate(); hull_input_v[j] |= aux_slice_v[j].input_gate();
+//					hull_output_x[j] |= aux_slice_x[j].output_gate(); hull_output_v[j] |= aux_slice_v[j].output_gate();
+//					hull_codomain_x[j] |= aux_slice_x[j].codomain(); hull_codomain_v[j] |= aux_slice_v[j].codomain();
+//				}
+//			}
+//
+//			/*replacing the old domains*/
+//			for (int j = 0 ; j < x_slice.size() ; j++){
+//				x_slice[j].set_envelope(x_slice[j].codomain() & hull_codomain_x[j]); v_slice[j].set_envelope(v_slice[j].codomain() & hull_codomain_v[j]);
+//				x_slice[j].set_input_gate(x_slice[j].input_gate() & hull_input_x[j]); v_slice[j].set_input_gate(v_slice[j].input_gate() & hull_input_v[j]);
+//				x_slice[j].set_output_gate(x_slice[j].output_gate() & hull_output_x[j]); v_slice[j].set_output_gate(v_slice[j].output_gate() & hull_output_v[j]);
+//			}
+////		}
+//
+//	}
 }
