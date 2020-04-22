@@ -21,147 +21,6 @@ namespace tubex
 
 	}
 
-//	void CtcIntegration::contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool m_report)
-//	{
-//
-//		/*check if everything is ok*/
-//		assert(x.size() == v.size());
-//		assert(x.domain() == v.domain());
-//		assert(TubeVector::same_slicing(x, v));
-//
-//		/*cpu time measurement*/
-//		clock_t tStart = clock();
-//
-//		/*init all the tubes*/
-//		vector<Slice*> x_slice;
-//		vector<Slice*> v_slice;
-//
-//		/*set where to start with the contraction in the dom=[t0,tf]*/
-//		/*if the contraction is from t=t0*/
-//		if (time_dom <= x.domain().lb()){
-//			for (int i = 0 ; i < x.size() ; i++){
-//				x_slice.push_back(x[i].first_slice());
-//				v_slice.push_back(v[i].first_slice());
-//			}
-//		}
-//
-//		/*if the contraction is from t=tf*/
-//		else if (time_dom >= x.domain().ub()){
-//			for (int i = 0 ; i < x.size() ; i++){
-//				x_slice.push_back(x[i].last_slice());
-//				v_slice.push_back(v[i].last_slice());
-//			}
-//		}
-//
-//		/*else the time is inside the interval [t0,tf]*/
-//		else{
-//			for (int i = 0 ; i < x.size() ; i++){
-//				x_slice.push_back(x[i].slice(time_dom));
-//				v_slice.push_back(v[i].slice(time_dom));
-//			}
-//			if (t_propa & FORWARD){
-//				for (int i = 0 ; i < x.size() ; i++){
-//					x_slice[i]=x_slice[i]->next_slice();
-//					v_slice[i]=v_slice[i]->next_slice();
-//				}
-//			}
-//		}
-//
-//		/*for each tube, go all over the slices*/
-//		while(x_slice[0] != NULL){
-//
-//			/*todo: checking if correct..*/
-//			for (int i = 0 ; i < v_slice.size() ; i++){
-//				if (v_slice[i]->codomain().is_unbounded())
-//					return;
-//			}
-//
-//			if(dynamic_cast <CtcDynCid*> (slice_ctr)){
-//				CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
-//				if (!cid->contract(x_slice,v_slice,t_propa)){
-//					if (t_propa & FORWARD)
-//						finaltime = x_slice[0]->domain().lb();
-//					else if (t_propa & BACKWARD)
-//						finaltime = x_slice[0]->domain().ub();
-//					if (m_incremental_mode)
-//						return;
-//				}
-//			}
-//
-//			else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
-//				CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
-//				if (!cidguess->contract(x_slice,v_slice,t_propa)){
-//					if (t_propa & FORWARD)
-//						finaltime = x_slice[0]->domain().lb();
-//					else if (t_propa & BACKWARD)
-//						finaltime = x_slice[0]->domain().ub();
-//					if (m_incremental_mode)
-//						return;
-//				}
-//			}
-//			else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
-//				CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
-//				if (!basic->contract(x_slice,v_slice,t_propa)){
-//					if (t_propa & FORWARD)
-//						finaltime = x_slice[0]->domain().lb();
-//					else if (t_propa & BACKWARD)
-//						finaltime = x_slice[0]->domain().ub();
-//					if (m_incremental_mode)
-//						return;
-//				}
-//			}
-//			else{
-//				cout << "ERROR: this sub-contractor is not handled by CtcIntegration" << endl;
-//				return;
-//			}
-//
-//			/*continue with the next slice*/
-//			if (t_propa & FORWARD){
-//				for (int i = 0 ; i < x.size() ; i++){
-//					x_slice[i] = x_slice[i]->next_slice();
-//					v_slice[i] = v_slice[i]->next_slice();
-//				}
-//			}
-//			else if (t_propa & BACKWARD){
-//				for (int i = 0 ; i < x.size() ; i++){
-//					x_slice[i] = x_slice[i]->prev_slice();
-//					v_slice[i] = v_slice[i]->prev_slice();
-//				}
-//			}
-//		}
-//		if (t_propa & FORWARD)
-//			finaltime = x.domain().ub();
-//		else if (t_propa & BACKWARD)
-//			finaltime = x.domain().lb();
-//	}
-//
-//	void CtcIntegration::contract(TubeVector& x, double time_dom, TPropagation t_propa, bool m_report)
-//	{
-//		/*v is computed*/
-//		TubeVector v=x;
-//		vector<Slice*> x_slice;
-//		vector<Slice*> v_slice;
-//
-//		for (int i = 0 ; i < x.size() ; i++){
-//			x_slice.push_back(x[i].first_slice());
-//			v_slice.push_back(v[i].first_slice());
-//		}
-//		while(x_slice[0] != NULL){
-//			IntervalVector envelope(x_slice.size());
-//			for (int j = 0 ; j < x_slice.size() ; j++)
-//				envelope[j] = x_slice[j]->codomain();
-//			envelope = fnc.eval_slice(x_slice[0]->domain(),envelope);
-//			for (int j = 0 ; j < x_slice.size() ; j++)
-//				v_slice[j]->set_envelope(envelope[j]);
-//
-//			for (int i = 0 ; i < x.size() ; i++)
-//				x_slice[i] = x_slice[i]->next_slice();
-//		}
-//
-//		contract(x,v,time_dom,t_propa,m_report);
-//	}
-
-
 	void CtcIntegration::contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool m_report)
 	{
 
@@ -244,7 +103,7 @@ namespace tubex
 			}
 
 			bool contract_slice = true;
-			for (int i = 0 ; i < v_slice.size() ; i++){
+			for (int i = 0 ; i < x_slice.size() ; i++){
 				if (v_slice[i]->codomain().is_unbounded()){
 					if (m_incremental_mode)
 						return;
@@ -359,75 +218,124 @@ namespace tubex
 		this->m_slice_picard_mode = slice_picard_mode;
 	}
 
-	std::pair<int,std::pair<ibex::Interval,double>> CtcIntegration::bisection_guess(TubeVector& x, TubeVector& v, tubex::Function& fnc){
+	std::pair<int,std::pair<double,double>> CtcIntegration::bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc){
 
-		/*variable  domain - bisection point*/
-		pair <int, pair <ibex::Interval,double> > bisection;
+		/*variable - time of bisection - bisection point*/
+		pair <int, pair <double,double> > bisection;
+
+		double t_bisection;  //time of bisection (in t)
+		double p_bisection; // value of bisection (in x)
 
 		/*init pair*/
-		bisection = make_pair(-1,make_pair(Interval(-1,-1),-1));
+		bisection = make_pair(-1,make_pair(-1,-1));
 
 		/*check if everything is ok*/
 		assert(x.size() == v.size());
 		assert(x.domain() == v.domain());
 		assert(TubeVector::same_slicing(x, v));
 
+
+
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
+		/*auxiliar tubes*/
+		vector<Slice*> aux_x_slice; TubeVector aux_x = x;
+		vector<Slice*> aux_v_slice; TubeVector aux_v = v;
 
-		/*push slices*/
-		for (int i = 0 ; i < x.size() ; i++){
-			x_slice.push_back(x[i].first_slice());
-			v_slice.push_back(v[i].first_slice());
-		}
 
-		/*Contractor deriv*/
-		CtcDeriv ctc_deriv;
+		for (int it = 0 ; it < 2 ; it++){
 
-		while(x_slice[0] != NULL){
+			/*push slices for forward phase*/
+			x_slice.clear(); v_slice.clear();
+			aux_x_slice.clear(); aux_v_slice.clear();
 
-			for (int i = 0 ; i < x.size(); i++){
-
-				vector<Slice> x_slice_aux;
-				vector<Slice> v_slice_aux;
-				for (int j = 0 ; j < x_slice.size() ; j++){
-					x_slice_aux.push_back(*x_slice[i]);
-					v_slice_aux.push_back(*v_slice[i]);
+			//for forward
+			TPropagation t_propa;
+			if (it == 0){
+				t_propa = FORWARD;
+				for (int i = 0 ; i < x.size() ; i++){
+					x_slice.push_back(x[i].first_slice());
+					v_slice.push_back(v[i].first_slice());
+					aux_x_slice.push_back(aux_x[i].first_slice());
+					aux_v_slice.push_back(aux_v[i].first_slice());
 				}
-				double point  = x_slice[i]->output_gate().mid();
-				x_slice_aux[i].set_output_gate(point);
-				for (int j = 0 ;  j < x_slice.size() ; j++){
-					double sx;
-					do
-					{
-						sx = x_slice_aux[j].volume();
-						ctc_deriv.contract(x_slice_aux[j], v_slice_aux[j], FORWARD);
+			}
+			//for backward
+			else{
+				t_propa = BACKWARD;
+				for (int i = 0 ; i < x.size() ; i++){
+					x_slice.push_back(x[i].last_slice());
+					v_slice.push_back(v[i].last_slice());
+					aux_x_slice.push_back(aux_x[i].last_slice());
+					aux_v_slice.push_back(aux_v[i].last_slice());
+				}
+			}
 
-						/*evaluation*/
-						IntervalVector envelope(x_slice.size());
+			while (x_slice[0] != NULL){
+				for (int i = 0 ; i < x.size() ; i++){
+					if (t_propa & FORWARD){
+						p_bisection = aux_x_slice[i]->output_gate().mid();
+						t_bisection = aux_x_slice[i]->domain().ub();
+						aux_x_slice[i]->set_output_gate(p_bisection);
+					}
+					else if (t_propa & BACKWARD){
+						p_bisection = aux_x_slice[i]->input_gate().mid();
+						t_bisection = aux_x_slice[i]->domain().lb();
+						aux_x_slice[i]->set_input_gate(p_bisection);
+					}
+					if(dynamic_cast <CtcDynCid*> (slice_ctr)){
+						CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
+						cid->contract(aux_x_slice,aux_v_slice,t_propa);
+					}
 
-						for (int k = 0 ; k < x_slice.size() ; k++)
-								envelope[k] = x_slice_aux[k].codomain();
-						v_slice_aux[j].set_envelope(fnc.eval_slice(x_slice_aux[j].domain(),envelope)[j]);
+					else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
+						CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
+						cidguess->contract(aux_x_slice,aux_v_slice,t_propa);
 
-					} while(sx-x_slice_aux[j].volume()>0);
+					}
+					else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
+						CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
+						basic->contract(aux_x_slice,aux_v_slice,t_propa);
 
-					if (x_slice_aux[j].is_empty()){
-						bisection = make_pair(i,make_pair(x_slice_aux[j].domain(),point));
-						return bisection;
+					}
+
+					for (int i = 0 ; i < aux_x_slice.size() ; i++){
+						if (aux_x_slice[i]->is_empty()){
+							bisection.first = i;
+							bisection.second.first = t_bisection;
+							bisection.second.second = p_bisection;
+							return bisection;
+						}
+					}
+					//restore domains
+					for (int i = 0 ; i < aux_x_slice.size() ; i++){
+						aux_x_slice[i]->set_envelope(x_slice[i]->codomain());
+						aux_x_slice[i]->set_input_gate(x_slice[i]->input_gate());
+						aux_x_slice[i]->set_output_gate(x_slice[i]->output_gate());
+					}
+
+				}
+
+				if (t_propa & FORWARD){
+					for (int i = 0 ; i < x.size() ; i++){
+						x_slice[i] = x_slice[i]->next_slice();
+						v_slice[i] = v_slice[i]->next_slice();
+						aux_x_slice[i] = aux_x_slice[i]->next_slice();
+						aux_v_slice[i] = aux_v_slice[i]->next_slice();
+					}
+				}
+				else if (t_propa & BACKWARD){
+					for (int i = 0 ; i < x.size() ; i++){
+						x_slice[i] = x_slice[i]->prev_slice();
+						v_slice[i] = v_slice[i]->prev_slice();
+						aux_x_slice[i] = aux_x_slice[i]->prev_slice();
+						aux_v_slice[i] = aux_v_slice[i]->prev_slice();
 					}
 				}
 			}
-
-			/*move to the next slice*/
-			for (int i = 0 ; i < x.size() ; i++){
-				x_slice[i] = x_slice[i]->next_slice();
-				v_slice[i] = v_slice[i]->next_slice();
-			}
 		}
-
-		/*there is not candidate to bisect, return -1 at variable*/
+		/*there is not candidate to bisect (to check, the variable is -1)*/
 		return bisection;
 	}
 
