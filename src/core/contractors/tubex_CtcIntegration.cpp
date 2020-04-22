@@ -224,7 +224,7 @@ namespace tubex
 		pair <int, pair <double,double> > bisection;
 
 		double t_bisection;  //time of bisection (in t)
-		double p_bisection; // value of bisection (in x)
+		double x_bisection; // value of bisection (in x)
 
 		/*init pair*/
 		bisection = make_pair(-1,make_pair(-1,-1));
@@ -275,14 +275,14 @@ namespace tubex
 			while (x_slice[0] != NULL){
 				for (int i = 0 ; i < x.size() ; i++){
 					if (t_propa & FORWARD){
-						p_bisection = aux_x_slice[i]->output_gate().mid();
+						x_bisection = aux_x_slice[i]->output_gate().mid();
 						t_bisection = aux_x_slice[i]->domain().ub();
-						aux_x_slice[i]->set_output_gate(p_bisection);
+						aux_x_slice[i]->set_output_gate(x_bisection);
 					}
 					else if (t_propa & BACKWARD){
-						p_bisection = aux_x_slice[i]->input_gate().mid();
+						x_bisection = aux_x_slice[i]->input_gate().mid();
 						t_bisection = aux_x_slice[i]->domain().lb();
-						aux_x_slice[i]->set_input_gate(p_bisection);
+						aux_x_slice[i]->set_input_gate(x_bisection);
 					}
 					if(dynamic_cast <CtcDynCid*> (slice_ctr)){
 						CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
@@ -304,7 +304,7 @@ namespace tubex
 						if (aux_x_slice[i]->is_empty()){
 							bisection.first = i;
 							bisection.second.first = t_bisection;
-							bisection.second.second = p_bisection;
+							bisection.second.second = x_bisection;
 							return bisection;
 						}
 					}
