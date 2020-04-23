@@ -130,6 +130,8 @@ namespace tubex
 
 	void CtcDynCid::set_propagation_engine(int engine){
 		this->engine = engine;
+		if (this->engine == 0) this->set_prec(0);      //difficult to check, as the contraction is more volatile.
+		else if (this->engine == 1) this->set_prec(0.01); // todo: seems a good tradeoff between cpu-time and contraction?
 	}
 
 
