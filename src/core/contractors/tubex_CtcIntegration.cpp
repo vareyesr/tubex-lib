@@ -313,12 +313,13 @@ namespace tubex
 								return bisection;
 							}
 							else {
-								if (gate_diam > max_diameter)
+								if (gate_diam > max_diameter){
 									bisection.first = i;
 									bisection.second.first = t_bisection;
 									bisection.second.second = x_bisection;
 									max_diameter = gate_diam;
 									break;
+								}
 							}
 						}
 					}
