@@ -63,7 +63,7 @@ namespace tubex
 		void set_incremental_mode(bool incremental_mode = true);
 
 		/*temporal function*/
-		std::pair<int,std::pair<double,double>> bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variation);
+		std::pair<int,std::pair<double,double>> bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variant);
 
 	private:
 		bool m_incremental_mode = true;

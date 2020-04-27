@@ -218,11 +218,11 @@ namespace tubex
 		this->m_slice_picard_mode = slice_picard_mode;
 	}
 
-	std::pair<int,std::pair<double,double>> CtcIntegration::bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variation){
+	std::pair<int,std::pair<double,double>> CtcIntegration::bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variant){
 
-		//variation 0 -> return immediately as soon as we find a potential gate
-		//variation 1 -> return the largest gate in a slice
-		//variation 2 -> return the largest gate in the complete tube
+		//variant 0 -> return immediately as soon as we find a potential gate
+		//variant 1 -> return the largest gate in a slice
+		//variant 2 -> return the largest gate in the complete tube
 
 		/*variable - time of bisection - bisection point*/
 		pair <int, pair <double,double> > bisection;
@@ -306,7 +306,7 @@ namespace tubex
 
 					for (int k = 0 ; k < aux_x_slice.size() ; k++){
 						if (aux_x_slice[k]->is_empty()){
-							if (variation == 0){
+							if (variant == 0){
 								bisection.first = i;
 								bisection.second.first = t_bisection;
 								bisection.second.second = x_bisection;
@@ -331,7 +331,7 @@ namespace tubex
 					}
 				}
 
-				if (variation == 1){
+				if (variant == 1){
 					if (bisection.first != -1)
 						return bisection;
 				}
@@ -354,8 +354,7 @@ namespace tubex
 				}
 			}
 		}
-		/*there is not candidate to bisect (to check, the variable is -1)*/
-
+		/*if variant 2 is selected, it will return here*/
 		return bisection;
 	}
 
