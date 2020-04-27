@@ -218,7 +218,11 @@ namespace tubex
 		this->m_slice_picard_mode = slice_picard_mode;
 	}
 
-	std::pair<int,std::pair<double,double>> CtcIntegration::bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc){
+	std::pair<int,std::pair<double,double>> CtcIntegration::bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variation){
+
+		//variation 0 -> return immediately as soon as we find a potential gate
+		//variation 1 -> return the largest gate in a slice
+		//variation 2 -> return the largest gate in the complete tube
 
 		/*variable - time of bisection - bisection point*/
 		pair <int, pair <double,double> > bisection;
@@ -234,8 +238,6 @@ namespace tubex
 		assert(x.domain() == v.domain());
 		assert(TubeVector::same_slicing(x, v));
 
-
-
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
@@ -244,6 +246,8 @@ namespace tubex
 		vector<Slice*> aux_v_slice; TubeVector aux_v = v;
 
 
+		double max_diameter = -1;
+		double gate_diam;
 		for (int it = 0 ; it < 2 ; it++){
 
 			/*push slices for forward phase*/
@@ -277,11 +281,13 @@ namespace tubex
 					if (t_propa & FORWARD){
 						x_bisection = aux_x_slice[i]->output_gate().mid();
 						t_bisection = aux_x_slice[i]->domain().ub();
+						gate_diam = aux_x_slice[i]->output_gate().diam();
 						aux_x_slice[i]->set_output_gate(x_bisection);
 					}
 					else if (t_propa & BACKWARD){
 						x_bisection = aux_x_slice[i]->input_gate().mid();
 						t_bisection = aux_x_slice[i]->domain().lb();
+						gate_diam = aux_x_slice[i]->input_gate().diam();
 						aux_x_slice[i]->set_input_gate(x_bisection);
 					}
 					if(dynamic_cast <CtcDynCid*> (slice_ctr)){
@@ -292,29 +298,41 @@ namespace tubex
 					else if(dynamic_cast <CtcDynCidGuess*> (slice_ctr)){
 						CtcDynCidGuess * cidguess = dynamic_cast <CtcDynCidGuess*> (slice_ctr);
 						cidguess->contract(aux_x_slice,aux_v_slice,t_propa);
-
 					}
 					else if(dynamic_cast <CtcDynBasic*> (slice_ctr)){
 						CtcDynBasic * basic = dynamic_cast <CtcDynBasic*> (slice_ctr);
 						basic->contract(aux_x_slice,aux_v_slice,t_propa);
-
 					}
 
-					for (int i = 0 ; i < aux_x_slice.size() ; i++){
-						if (aux_x_slice[i]->is_empty()){
-							bisection.first = i;
-							bisection.second.first = t_bisection;
-							bisection.second.second = x_bisection;
-							return bisection;
+					for (int k = 0 ; k < aux_x_slice.size() ; k++){
+						if (aux_x_slice[k]->is_empty()){
+							if (variation == 0){
+								bisection.first = i;
+								bisection.second.first = t_bisection;
+								bisection.second.second = x_bisection;
+								return bisection;
+							}
+							else {
+								if (gate_diam > max_diameter)
+									bisection.first = i;
+									bisection.second.first = t_bisection;
+									bisection.second.second = x_bisection;
+									max_diameter = gate_diam;
+									break;
+							}
 						}
 					}
 					//restore domains
-					for (int i = 0 ; i < aux_x_slice.size() ; i++){
-						aux_x_slice[i]->set_envelope(x_slice[i]->codomain());
-						aux_x_slice[i]->set_input_gate(x_slice[i]->input_gate());
-						aux_x_slice[i]->set_output_gate(x_slice[i]->output_gate());
+					for (int k = 0 ; k < aux_x_slice.size() ; k++){
+						aux_x_slice[k]->set_envelope(x_slice[k]->codomain());
+						aux_x_slice[k]->set_input_gate(x_slice[k]->input_gate());
+						aux_x_slice[k]->set_output_gate(x_slice[k]->output_gate());
 					}
+				}
 
+				if (variation == 1){
+					if (bisection.first != -1)
+						return bisection;
 				}
 
 				if (t_propa & FORWARD){
@@ -336,6 +354,7 @@ namespace tubex
 			}
 		}
 		/*there is not candidate to bisect (to check, the variable is -1)*/
+
 		return bisection;
 	}
 
