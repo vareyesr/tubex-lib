@@ -249,30 +249,25 @@ namespace tubex
 		double max_diameter = -1;
 		double gate_diam;
 		for (int it = 0 ; it < 2 ; it++){
-
-			/*push slices for forward phase*/
+			//clean
 			x_slice.clear(); v_slice.clear();
 			aux_x_slice.clear(); aux_v_slice.clear();
-
+			/*push slices for forward phase*/
 			//for forward
 			TPropagation t_propa;
 			if (it == 0){
 				t_propa = FORWARD;
 				for (int i = 0 ; i < x.size() ; i++){
-					x_slice.push_back(x[i].first_slice());
-					v_slice.push_back(v[i].first_slice());
-					aux_x_slice.push_back(aux_x[i].first_slice());
-					aux_v_slice.push_back(aux_v[i].first_slice());
+					x_slice.push_back(x[i].first_slice()); aux_x_slice.push_back(aux_x[i].first_slice());
+					v_slice.push_back(v[i].first_slice()); aux_v_slice.push_back(aux_v[i].first_slice());
 				}
 			}
 			//for backward
 			else{
 				t_propa = BACKWARD;
 				for (int i = 0 ; i < x.size() ; i++){
-					x_slice.push_back(x[i].last_slice());
-					v_slice.push_back(v[i].last_slice());
-					aux_x_slice.push_back(aux_x[i].last_slice());
-					aux_v_slice.push_back(aux_v[i].last_slice());
+					x_slice.push_back(x[i].last_slice()); aux_x_slice.push_back(aux_x[i].last_slice());
+					v_slice.push_back(v[i].last_slice()); aux_v_slice.push_back(aux_v[i].last_slice());
 				}
 			}
 
@@ -323,11 +318,11 @@ namespace tubex
 							}
 						}
 					}
-					//restore domains
+					//restore values for x and v
 					for (int k = 0 ; k < aux_x_slice.size() ; k++){
-						aux_x_slice[k]->set_envelope(x_slice[k]->codomain());
-						aux_x_slice[k]->set_input_gate(x_slice[k]->input_gate());
-						aux_x_slice[k]->set_output_gate(x_slice[k]->output_gate());
+						aux_x_slice[k]->set_envelope(x_slice[k]->codomain()); aux_v_slice[k]->set_envelope(v_slice[k]->codomain());
+						aux_x_slice[k]->set_input_gate(x_slice[k]->input_gate()); aux_v_slice[k]->set_input_gate(v_slice[k]->input_gate());
+						aux_x_slice[k]->set_output_gate(x_slice[k]->output_gate()); aux_v_slice[k]->set_output_gate(v_slice[k]->output_gate());
 					}
 				}
 
@@ -338,18 +333,14 @@ namespace tubex
 
 				if (t_propa & FORWARD){
 					for (int i = 0 ; i < x.size() ; i++){
-						x_slice[i] = x_slice[i]->next_slice();
-						v_slice[i] = v_slice[i]->next_slice();
-						aux_x_slice[i] = aux_x_slice[i]->next_slice();
-						aux_v_slice[i] = aux_v_slice[i]->next_slice();
+						x_slice[i] = x_slice[i]->next_slice(); aux_x_slice[i] = aux_x_slice[i]->next_slice();
+						v_slice[i] = v_slice[i]->next_slice(); aux_v_slice[i] = aux_v_slice[i]->next_slice();
 					}
 				}
 				else if (t_propa & BACKWARD){
 					for (int i = 0 ; i < x.size() ; i++){
-						x_slice[i] = x_slice[i]->prev_slice();
-						v_slice[i] = v_slice[i]->prev_slice();
-						aux_x_slice[i] = aux_x_slice[i]->prev_slice();
-						aux_v_slice[i] = aux_v_slice[i]->prev_slice();
+						x_slice[i] = x_slice[i]->prev_slice(); aux_x_slice[i] = aux_x_slice[i]->prev_slice();
+						v_slice[i] = v_slice[i]->prev_slice(); aux_v_slice[i] = aux_v_slice[i]->prev_slice();
 					}
 				}
 			}
