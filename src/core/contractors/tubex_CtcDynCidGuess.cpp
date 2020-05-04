@@ -60,19 +60,25 @@ namespace tubex
 			/*propagation engine*/
 			bool fix_point;
 			int max_iterations;
-			do{
-				fix_point = false;
-				double volume_1 = 0; double volume_2 = 0;
-				for (int i = 0; i < x_slice.size() ; i++)
-					volume_1 = volume_1 + x_slice_bounds[i].volume();
-				if (get_propagation_engine() == 0)
-					AtomicPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
-				else if (get_propagation_engine() == 1)
-					FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
-				for (int i = 0; i < x_slice.size() ; i++)
-					volume_2 = volume_2 + x_slice_bounds[i].volume();
-				if (1-(volume_2/volume_1) > get_prec()) fix_point = true;
-			} while (fix_point);
+//			do{
+			if (get_propagation_engine() == 0){
+				AtomicPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
+			}
+			else if (get_propagation_engine() == 1){
+				FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
+			}
+//			fix_point = false;
+//			double volume_1 = 0; double volume_2 = 0;
+//			for (int i = 0; i < x_slice.size() ; i++)
+//				volume_1 = volume_1 + x_slice_bounds[i].volume();
+//			if (get_propagation_engine() == 0)
+//				AtomicPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
+//			else if (get_propagation_engine() == 1)
+//				FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
+//			for (int i = 0; i < x_slice.size() ; i++)
+//				volume_2 = volume_2 + x_slice_bounds[i].volume();
+//				if (1-(volume_2/volume_1) > get_prec()) fix_point = true;
+//			} while (fix_point);
 
 
 			/*3B part*/
@@ -110,13 +116,11 @@ namespace tubex
 			if ((first_iteration) && (volumex_1 == volumex_2))
 				return false;
 			first_iteration = false;
-			if (get_max_it() && x_slice.size()==1) fix_point2 = false;
+			if (get_max_it()) fix_point2 = false;
 
 		} while(fix_point2);
 		return true;
 	}
-
-
 
 
 	void CtcDynCidGuess::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
@@ -256,8 +260,8 @@ namespace tubex
 				ctc_deriv.contract(x_slice_bounds[i], v_slice_bounds[i],t_propa);
 				ctc_fwd(x_slice_bounds[i], v_slice_bounds[i], x_slice, v_slice, i);
 				max_iterations++;
-			} while((sx-x_slice_bounds[i].volume() > 0) && (max_iterations<75) );
-			if (max_iterations==75) set_max_it(true);  // max iterations reached
+			} while((sx-x_slice_bounds[i].volume() > 0) && (max_iterations<50) );
+//			if (max_iterations>=50) set_max_it(true);  // max iterations reached
 			/*if something is empty means that we can remove the complete interval*/
 			if (x_slice_bounds[i].is_empty()){
 				if (t_propa & FORWARD){
@@ -339,8 +343,8 @@ namespace tubex
 					ctc_deriv.contract(aux_slice_x, aux_slice_v,t_propa);
 					ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 					max_iterations++;
-				} while((1-(aux_slice_x.volume()/sx)) > get_prec() && (max_iterations<75));
-				if (max_iterations==75) set_max_it(true);  // max iterations reached
+				} while((1-(aux_slice_x.volume()/sx)) > get_prec() && (max_iterations<50));
+				if (max_iterations>=50) set_max_it(true);  // max iterations reached
 				/*The union of the current guess is made.*/
 				if (t_propa & BACKWARD){
 					hull_input_x |= aux_slice_x.input_gate(); hull_input_v |= aux_slice_v.input_gate();
