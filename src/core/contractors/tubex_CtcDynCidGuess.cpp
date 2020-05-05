@@ -17,6 +17,7 @@ namespace tubex
 	CtcDynCidGuess::CtcDynCidGuess(tubex::Function& fnc, double prec): fnc(fnc), prec(prec)
 	{
 		assert(prec >= 0);
+		set_prec(0.05);
 	}
 
 	bool CtcDynCidGuess::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TPropagation t_propa)
@@ -60,13 +61,14 @@ namespace tubex
 			/*propagation engine*/
 			bool fix_point;
 			int max_iterations;
-//			do{
+
 			if (get_propagation_engine() == 0){
 				AtomicPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
 			}
 			else if (get_propagation_engine() == 1){
 				FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
 			}
+			//			do{
 //			fix_point = false;
 //			double volume_1 = 0; double volume_2 = 0;
 //			for (int i = 0; i < x_slice.size() ; i++)
