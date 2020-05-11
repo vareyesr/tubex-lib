@@ -72,10 +72,10 @@ namespace tubex
 		return true;
 	}
 
-	void CtcDynBasic::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TubeVector& x ,int slice_id, TPropagation t_propa){
+	bool CtcDynBasic::contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TubeVector& x ,int slice_id, TPropagation t_propa){
 		this->slice_id = slice_id;
 		this->tube_x = x;
-		contract(x_slice,v_slice,t_propa);
+		return contract(x_slice,v_slice,t_propa);
 	}
 
 

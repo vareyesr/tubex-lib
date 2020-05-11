@@ -33,7 +33,7 @@ namespace tubex
 		/*
 		 * Only for non IVPs,BVPs
 		 */
-		void contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TubeVector& x ,int slice_id, TPropagation t_propa);
+		bool contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TubeVector& x ,int slice_id, TPropagation t_propa);
 		/*
 		 * ctc_fwd manages to make an evaluation of the current Slices in order to contract and update v
 		 */
