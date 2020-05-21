@@ -27,7 +27,7 @@ namespace tubex
 		/*
 		 * todo: add comments
 		 */
-		CtcDynCidGuess(tubex::Function& fnc, double prec=0.05);
+		CtcDynCidGuess(tubex::Fnc& fnc, double prec=0.05);
 		/*
 		 * todo: add comments
 		 */
@@ -80,7 +80,7 @@ namespace tubex
 
 	private:
 		double prec;
-		tubex::Function& fnc;
+		tubex::Fnc& fnc;
 		CtcDeriv ctc_deriv;
 		int engine = 0;  //by default the propagation engine is atomic (faster)
 		bool max_it = false;

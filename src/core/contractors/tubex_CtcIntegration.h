@@ -27,7 +27,7 @@ namespace tubex
 		 * CtcIntegration is a contractor that works at the Tube level. It requires as input an evolution function and a Slice contractor.
 		 * Currently, the slice contractors that can be used are: CtcDynCid and CtcDynCidGuess
 		 */
-		CtcIntegration(tubex::Function& fnc, Ctc* slice_ctr);
+		CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
@@ -68,7 +68,7 @@ namespace tubex
 	private:
 		bool m_incremental_mode = true;
 		Ctc* slice_ctr;
-		tubex::Function& fnc;
+		tubex::Fnc& fnc;
 		double finaltime;
 		bool m_slice_picard_mode = false;
 	};

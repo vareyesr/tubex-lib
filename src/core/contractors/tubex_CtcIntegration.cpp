@@ -16,7 +16,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcIntegration::CtcIntegration(tubex::Function& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1)
+	CtcIntegration::CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1)
 	{
 
 	}
@@ -191,10 +191,11 @@ namespace tubex
 			v_slice.push_back(v[i].first_slice());
 		}
 		while(x_slice[0] != NULL){
-			IntervalVector envelope(x_slice.size());
+			IntervalVector envelope(x_slice.size()+1);
+			envelope[0] = x_slice[0]->domain();
 			for (int j = 0 ; j < x_slice.size() ; j++)
-				envelope[j] = x_slice[j]->codomain();
-			envelope = fnc.eval_slice(x_slice[0]->domain(),envelope);
+				envelope[j+1] = x_slice[j]->codomain();
+			envelope = fnc.eval_vector(envelope);
 			for (int j = 0 ; j < x_slice.size() ; j++)
 				v_slice[j]->set_envelope(envelope[j]);
 

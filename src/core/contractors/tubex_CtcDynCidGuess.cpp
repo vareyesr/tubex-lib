@@ -14,7 +14,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcDynCidGuess::CtcDynCidGuess(tubex::Function& fnc, double prec): fnc(fnc), prec(prec)
+	CtcDynCidGuess::CtcDynCidGuess(tubex::Fnc& fnc, double prec): fnc(fnc), prec(prec)
 	{
 		assert(prec >= 0);
 		set_prec(0.05);
@@ -68,20 +68,6 @@ namespace tubex
 			else if (get_propagation_engine() == 1){
 				FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
 			}
-			//			do{
-//			fix_point = false;
-//			double volume_1 = 0; double volume_2 = 0;
-//			for (int i = 0; i < x_slice.size() ; i++)
-//				volume_1 = volume_1 + x_slice_bounds[i].volume();
-//			if (get_propagation_engine() == 0)
-//				AtomicPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
-//			else if (get_propagation_engine() == 1)
-//				FullPropagationEngine(x_slice_bounds,v_slice_bounds,t_propa);
-//			for (int i = 0; i < x_slice.size() ; i++)
-//				volume_2 = volume_2 + x_slice_bounds[i].volume();
-//				if (1-(volume_2/volume_1) > get_prec()) fix_point = true;
-//			} while (fix_point);
-
 
 			/*3B part*/
 			for (int i = 0 ; i < x_slice.size() ; i++){
@@ -128,29 +114,31 @@ namespace tubex
 	void CtcDynCidGuess::ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos)
 	{
 		/*envelope*/
-		IntervalVector envelope(x_slice.size());
-
+		IntervalVector envelope(x_slice.size()+1);
+		envelope[0] = x.domain();
 		for (int i = 0 ; i < x_slice.size() ; i++){
 			if (i==pos)
-				envelope[i] = x.codomain();
+				envelope[i+1] = x.codomain();
 			else
-				envelope[i] = x_slice[i]->codomain();
+				envelope[i+1] = x_slice[i]->codomain();
 		}
-			v.set_envelope(fnc.eval_slice(x.domain(),envelope)[pos]);
+			v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
 	void CtcDynCidGuess::ctc_fwd(Slice &x, Slice &v, std::vector<Slice> x_slice, std::vector<Slice> v_slice, int pos)
 	{
 		/*envelope*/
-		IntervalVector envelope(x_slice.size());
+		IntervalVector envelope(x_slice.size()+1);
+		envelope[0] = x.domain();
+
 		for (int i = 0 ; i < x_slice.size() ; i++){
 			if (i==pos)
-				envelope[i] = x.codomain();
+				envelope[i+1] = x.codomain();
 			else
-				envelope[i] = x_slice[i].codomain();
+				envelope[i+1] = x_slice[i].codomain();
 		}
 
-		v.set_envelope(fnc.eval_slice(x.domain(),envelope)[pos]);
+		v.set_envelope(fnc.eval_vector(envelope)[pos]);
 	}
 
 	double CtcDynCidGuess::get_prec()
@@ -346,6 +334,7 @@ namespace tubex
 					ctc_fwd(aux_slice_x, aux_slice_v, x_slice, v_slice, i);
 					max_iterations++;
 				} while((1-(aux_slice_x.volume()/sx)) > get_prec() && (max_iterations<50));
+
 				if (max_iterations>=50) set_max_it(true);  // max iterations reached
 				/*The union of the current guess is made.*/
 				if (t_propa & BACKWARD){
