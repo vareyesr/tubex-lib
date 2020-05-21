@@ -5,7 +5,7 @@
  *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 
-#include "tubex_CtcODE.h"
+#include "tubex_CtcExplicitDE.h"
 
 using namespace std;
 using namespace ibex;
@@ -13,7 +13,7 @@ using namespace ibex;
 
 namespace tubex
 {	//ctc_integration, observations->input_times
-	CtcODE::CtcODE(std::vector<double> input_times, CtcIntegration ctc_integration): input_times(input_times), ctc_integration(ctc_integration)
+	CtcExplicitDE::CtcExplicitDE(std::vector<double> input_times, CtcIntegration ctc_integration): input_times(input_times), ctc_integration(ctc_integration)
 	{
 		/*check input, size must be greater than 0*/
 		assert(input_times.size() > 0.);
@@ -21,7 +21,7 @@ namespace tubex
 
 	}
 
-	void CtcODE::contract(TubeVector& x, TubeVector& v)
+	void CtcExplicitDE::contract(TubeVector& x, TubeVector& v)
 	{
 
 		/*FORWARD Phase*/

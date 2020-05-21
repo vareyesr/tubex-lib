@@ -5,23 +5,21 @@
  *  \authors  	Victor Reyes, Gilles Trombettoni
  */
 
-#ifndef __TUBEX_CTCODE_H__
-#define __TUBEX_CTCODE_H__
+#ifndef __TUBEX_CTCEXPLICITDE_H__
+#define __TUBEX_CTCEXPLICITDE_H__
 
 #include "tubex_CtcIntegration.h"
 #include "tubex_Ctc.h"
-#include "tubex_Slice.h"
 #include <vector>
-#include <ctime>
 
 namespace tubex
 {
 
-	class CtcODE : public Ctc{
+	class CtcExplicitDE : public Ctc{
 
 	public:
 
-		CtcODE(std::vector<double> input_times, CtcIntegration ctc_integration);
+		CtcExplicitDE(std::vector<double> input_times, CtcIntegration ctc_integration);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
