@@ -16,7 +16,7 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcIntegration::CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1)
+	CtcIntegration::CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr, Ptype p_type): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1),p_type(p_type)
 	{
 
 	}
@@ -35,8 +35,6 @@ namespace tubex
 		/*init all the tubes*/
 		vector<Slice*> x_slice;
 		vector<Slice*> v_slice;
-
-
 
 		/*set where to start with the contraction in the dom=[t0,tf]*/
 		/*if the contraction is from t=t0*/
@@ -84,6 +82,11 @@ namespace tubex
 			else
 				m_slice_picard_mode = false;
 		}
+		std::vector<Interval> idiff_values;
+		if (p_type & integrodiff){
+			for (int i = 0 ; i < x.nb_slices();i++)
+				idiff_values.push_back(Interval(0.,0.));
+		}
 
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
@@ -115,7 +118,19 @@ namespace tubex
 			}
 
 			if (contract_slice){
-				if(dynamic_cast <CtcDynCid*> (slice_ctr)){
+
+				if(p_type & integrodiff){
+					if (contract_idiff(x_slice,v_slice,x,nb_slices,idiff_values,t_propa)){
+						if (t_propa & FORWARD)
+							finaltime = x_slice[0]->domain().lb();
+						else if (t_propa & BACKWARD)
+							finaltime = x_slice[0]->domain().ub();
+						if (m_incremental_mode)
+							return;
+					}
+				}
+
+				else if(dynamic_cast <CtcDynCid*> (slice_ctr)){
 					CtcDynCid * cid = dynamic_cast <CtcDynCid*> (slice_ctr);
 					if (!cid->contract(x_slice,v_slice,t_propa)){
 						if (t_propa & FORWARD)
@@ -350,33 +365,53 @@ namespace tubex
 		return bisection;
 	}
 
+	bool CtcIntegration::contract_idiff(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice,TubeVector x,int id, std::vector<Interval> idiff_values,TPropagation t_propa){
 
-	void CtcIntegration::report(clock_t tStart,TubeVector& x,double old_volume)
-	{
-//		cout <<endl<< "----------Results for: " <<	dynamic_cast <ibex::Function&>(fnc)<<"----------"<<endl << endl;
-//		/*CidSlicing does nothing, */
-//		if (old_volume == x.volume()){
-//			cout << "\033[1;31mNo contraction made by 3BGuess!\033[0m\n";
-//			printf("CPU Time spent by 3BGuess: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-//		}
-//		/*CidSlicing contracts the tube*/
-//		else{
-//			double doors_size = 0 ;
-//			int nb_doors = 0;
-//			for (int i = 0 ; i < x.size() ; i++){
-//				Slice* x_slice = x[i].first_slice();
-//				for (int j = 0 ; j < x[i].nb_slices() ; j++){
-//					doors_size +=x_slice->output_gate().diam();
-//					nb_doors++;
-//					x_slice = x_slice->next_slice();
-//				}
-//			}
-//			cout << "\033[1;31mContraction successful!  -  3BGuess\033[0m\n";
-//			printf("CPU Time spent by 3BGuess: %.5f (s)\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-//			printf("Old Volume: %.7f\n", old_volume);
-//			printf("New Volume: %.7f\n", x.volume());
-//			printf("Average size of doors: %f\n\n", (double)doors_size/nb_doors);
-}
+		Interval to_try(x_slice[0]->domain());
+		for (int i = 1 ; i < x_slice.size(); i++)
+			assert(to_try == x_slice[i]->domain());
 
+		bool fix_point_n;
+		bool first_iteration = true;
+		CtcDeriv ctc_deriv;
+		ctc_deriv.set_fast_mode(true);
+		do{
+			fix_point_n = false;
+
+			for (int i = 0 ; i < x_slice.size() ; i++){
+//				TubeVector aux_vector_x = x;
+				/*Fixpoint for each sub-slice at each tube*/
+				double sx;
+				double aux_envelope = x_slice[i]->codomain().diam();
+				/*without polygons*/
+
+				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+				if (t_propa & FORWARD){
+					Interval aux_codomain;
+					/*todo: how to make this general?*/
+					Interval integral_value = -5. * x.integral(x_slice[0]->domain().ub())[i];
+					IntervalVector envelope(x_slice.size());
+					for (int j = 0 ; j < x_slice.size() ; j++)
+						envelope[j] = x_slice[j]->codomain();
+					aux_codomain = fnc.eval_vector(envelope)[i]+ integral_value;
+//					if (id > 0 ) aux_codomain+=idiff_values[id-1];
+					v_slice[i]->set_envelope(aux_codomain);
+					idiff_values[id]=integral_value;
+					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+				}
+				if (x_slice[i]->is_empty()) return false;
+			}
+			if ((first_iteration) && !(fix_point_n))
+				return false;
+
+			first_iteration = false;
+
+			/*For 1-dimensional problems it is not necessary to repeat the process*/
+			if (x_slice.size() == 1)
+				fix_point_n=false;
+		} while(fix_point_n);
+
+		return true;
+	}
 
 }
