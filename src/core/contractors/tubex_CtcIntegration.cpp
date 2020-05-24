@@ -16,12 +16,12 @@ using namespace ibex;
 
 namespace tubex
 {
-	CtcIntegration::CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr, Ptype p_type): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1),p_type(p_type)
+	CtcIntegration::CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr): fnc(fnc), slice_ctr(slice_ctr),finaltime(-1)
 	{
 
 	}
 
-	void CtcIntegration::contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool m_report)
+	void CtcIntegration::contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, Ptype p_type)
 	{
 
 		/*check if everything is ok*/
@@ -194,7 +194,7 @@ namespace tubex
 			finaltime = x.domain().lb();
 	}
 
-	void CtcIntegration::contract(TubeVector& x, double time_dom, TPropagation t_propa, bool m_report)
+	void CtcIntegration::contract(TubeVector& x, double time_dom, TPropagation t_propa)
 	{
 		/*v is computed*/
 		TubeVector v=x;
@@ -218,7 +218,7 @@ namespace tubex
 				x_slice[i] = x_slice[i]->next_slice();
 		}
 
-		contract(x,v,time_dom,t_propa,m_report);
+		contract(x,v,time_dom,t_propa);
 	}
 
 	double CtcIntegration::get_finaltime()

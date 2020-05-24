@@ -32,16 +32,16 @@ namespace tubex
 		 * CtcIntegration is a contractor that works at the Tube level. It requires as input an evolution function and a Slice contractor.
 		 * Currently, the slice contractors that can be used are: CtcDynCid and CtcDynCidGuess
 		 */
-		CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr, Ptype p_type=ode);
+		CtcIntegration(tubex::Fnc& fnc, Ctc* slice_ctr);
 		/*
 		 * This method performs a contraction for the TubeVector x.
 		 * Note that the timesteps between the Tubes of x must be identically the same.
 		 */
-		void contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, bool report=false);
+		void contract(TubeVector& x, TubeVector& v, double time_dom, TPropagation t_propa, Ptype p_type=ode);
 		/*
 		 * Same as above, but v is computed inside.
 		 */
-		void contract(TubeVector& x, double time_dom, TPropagation t_propa, bool report=false);
+		void contract(TubeVector& x, double time_dom, TPropagation t_propa);
 		/*
 		 * ctc_fwd manages to make an evaluation of the current Slice in order to contract and update v
 		 */
@@ -69,7 +69,6 @@ namespace tubex
 		std::pair<int,std::pair<double,double>> bisection_guess(TubeVector x, TubeVector v, Ctc* slice_ctr, tubex::Function& fnc, int variant);
 
 	private:
-		Ptype p_type;
 		bool m_incremental_mode = true;
 		Ctc* slice_ctr;
 		tubex::Fnc& fnc;

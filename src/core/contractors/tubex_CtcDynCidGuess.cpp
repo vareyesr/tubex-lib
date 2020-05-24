@@ -186,10 +186,12 @@ namespace tubex
 		if (variation==0){
 			this->set_propagation_engine(0);
 			this->set_prec(0.05);
+			this->set_s_corn(0);
+			this->set_dpolicy(0);
 		}
 		else if (variation==1){
 			this->set_propagation_engine(1);
-			this->set_prec(0.05);
+			this->set_prec(0.06);
 			this->set_s_corn(1);
 			this->set_dpolicy(2);
 		}
