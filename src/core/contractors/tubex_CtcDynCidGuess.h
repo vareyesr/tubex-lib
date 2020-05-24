@@ -84,7 +84,7 @@ namespace tubex
 		void set_dpolicy(int d_policy);
 		int get_dpolicy();
 
-		void set_variation(int variation);
+		void set_variant(int variation);
 
 	private:
 		double prec;

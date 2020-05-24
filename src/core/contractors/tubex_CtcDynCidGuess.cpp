@@ -182,20 +182,20 @@ namespace tubex
 	void CtcDynCidGuess::set_dpolicy(int d_policy){
 				this->d_policy = d_policy;
 	}
-	void CtcDynCidGuess::set_variation(int variation){
-		if (variation==0){
+	void CtcDynCidGuess::set_variant(int variant){
+		if (variant==0){
 			this->set_propagation_engine(0);
 			this->set_prec(0.05);
 			this->set_s_corn(0);
 			this->set_dpolicy(0);
 		}
-		else if (variation==1){
+		else if (variant==1){
 			this->set_propagation_engine(1);
 			this->set_prec(0.05);
 			this->set_s_corn(1);
 			this->set_dpolicy(2);
 		}
-		else if (variation==2){
+		else if (variant==2){
 			this->set_propagation_engine(1);
 			this->set_prec(0.025);
 			this->set_s_corn(1);
