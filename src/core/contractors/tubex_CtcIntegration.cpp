@@ -83,10 +83,6 @@ namespace tubex
 				m_slice_picard_mode = false;
 		}
 		std::vector<Interval> idiff_values;
-		if (p_type & integrodiff){
-			for (int i = 0 ; i < x.nb_slices();i++)
-				idiff_values.push_back(Interval(0.,0.));
-		}
 
 		/*for each tube, go all over the slices*/
 		while(x_slice[0] != NULL){
@@ -120,6 +116,7 @@ namespace tubex
 			if (contract_slice){
 
 				if(p_type & integrodiff){
+					idiff_values.push_back(Interval(0.,0.));
 					if (contract_idiff(x_slice,v_slice,x,nb_slices,idiff_values,t_propa)){
 						if (t_propa & FORWARD)
 							finaltime = x_slice[0]->domain().lb();
@@ -365,7 +362,7 @@ namespace tubex
 		return bisection;
 	}
 
-	bool CtcIntegration::contract_idiff(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice,TubeVector x,int id, std::vector<Interval> idiff_values,TPropagation t_propa){
+	bool CtcIntegration::contract_idiff(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice,TubeVector x,int id, std::vector<Interval>& idiff_values,TPropagation t_propa){
 
 		Interval to_try(x_slice[0]->domain());
 		for (int i = 1 ; i < x_slice.size(); i++)
@@ -387,17 +384,21 @@ namespace tubex
 
 				ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
 				if (t_propa & FORWARD){
-					Interval aux_codomain;
-					/*todo: how to make this general?*/
-					Interval integral_value = -5. * x.integral(x_slice[0]->domain().ub())[i];
-					IntervalVector envelope(x_slice.size());
-					for (int j = 0 ; j < x_slice.size() ; j++)
-						envelope[j] = x_slice[j]->codomain();
-					aux_codomain = fnc.eval_vector(envelope)[i]+ integral_value;
-//					if (id > 0 ) aux_codomain+=idiff_values[id-1];
-					v_slice[i]->set_envelope(aux_codomain);
-					idiff_values[id]=integral_value;
-					ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+					do{
+						sx=x[i].volume();
+						Interval aux_codomain;
+						/*todo: how to make this general?*/
+						Interval integral_value = -5. * x.integral(x_slice[0]->domain().lb(),x_slice[0]->domain().ub())[i];
+						IntervalVector envelope(x_slice.size());
+						for (int j = 0 ; j < x_slice.size() ; j++)
+							envelope[j] = x_slice[j]->codomain();
+						aux_codomain = fnc.eval_vector(envelope)[i]+ integral_value;
+						if (id==0) idiff_values[id]=integral_value;
+						else if (id>0) idiff_values[id]=integral_value+idiff_values[id-1];
+						if (id > 0 ) aux_codomain+=idiff_values[id-1];
+						v_slice[i]->set_envelope(aux_codomain);
+						ctc_deriv.contract(*x_slice[i], *v_slice[i],t_propa);
+					}while(x[i].volume() != sx);
 				}
 				if (x_slice[i]->is_empty()) return false;
 			}
