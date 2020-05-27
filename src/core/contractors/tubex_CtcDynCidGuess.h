@@ -84,6 +84,9 @@ namespace tubex
 		void set_dpolicy(int d_policy);
 		int get_dpolicy();
 
+		void set_s_interval(double s_interval);
+		double get_s_interval();
+
 		void set_variant(int variation);
 
 	private:
@@ -94,6 +97,7 @@ namespace tubex
 		int s_strategy = 0 ;
 		bool max_it = false;
 		int d_policy = 0; // 0: nothing , 1: small , 2:big
+		double s_interval=1/128;
 	};
 }
 

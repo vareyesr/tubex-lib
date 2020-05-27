@@ -163,6 +163,11 @@ namespace tubex
 		return this->d_policy;
 	}
 
+	double CtcDynCidGuess::get_s_interval(){
+		return this->s_interval = s_interval;
+	}
+
+
 	void CtcDynCidGuess::set_prec(double prec){
 		this->prec = prec;
 	}
@@ -176,12 +181,17 @@ namespace tubex
 	}
 
 	void CtcDynCidGuess::set_s_corn(int s_strategy){
-			this->s_strategy = s_strategy;
+		this->s_strategy = s_strategy;
 	}
 
 	void CtcDynCidGuess::set_dpolicy(int d_policy){
-				this->d_policy = d_policy;
+		this->d_policy = d_policy;
 	}
+
+	void CtcDynCidGuess::set_s_interval(double s_interval){
+		this->s_interval = s_interval;
+	}
+
 	void CtcDynCidGuess::set_variant(int variant){
 		if (variant==0){
 			this->set_propagation_engine(0);
@@ -324,7 +334,7 @@ namespace tubex
 		Interval subinterval_removal;  bool success;
 		if (get_dpolicy() != 0){
 			for (int k = 0 ;  k < 1 ; k++){
-				double diam_removal = (remove_bound.diam()/128)*(k+1);
+				double diam_removal = (remove_bound.diam()*get_s_interval())*(k+1);
 				/*restore domains*/
 				x_slice_bounds.clear(); v_slice_bounds.clear();
 				for (int i = 0 ; i < x_slice.size() ; i++){
