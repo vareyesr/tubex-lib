@@ -15,7 +15,7 @@
 
 namespace tubex
 {
-	/*
+	/**
 	* \class CtcCid
 	* \brief \f$\mathcal{C}_{Cid}\f$ that contracts a tube \f$[x](\cdot)\f$ using the contractors
 	* \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$ at the Slice level.
@@ -40,6 +40,8 @@ namespace tubex
 		 * \param x_slice vector of slices
 		 * \param v_slice vector of evaluations
 		 * \param t_propa temporal way of propagation, either forward or backward.
+		 *
+		 * \return If true, a reduction in some/all domains of x_slice has been obtained
 		*/
 		bool contract(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TimePropag t_propa);
 		/**
@@ -50,7 +52,7 @@ namespace tubex
 		* \param v_domains vector of Domain pointers
 		*/
 		void contract(std::vector<Domain*>& v_domains);
-		/*
+		/**
 		* \brief Creates a certain number of subintervals to be treated
 		*
 		* \param x_slice the slice to be treated
@@ -62,49 +64,60 @@ namespace tubex
 		* \brief ctc_fwd makes an evaluation of the current Slices using the evolution function in
 		* order to contract and update v
 		*
-		* todo: merge both methods
+		* \todo merge both methods
 		*/
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		/**
+		* \brief ctc_fwd makes an evaluation of the current Slices using the evolution function in
+		* order to contract and update v
+		*
+		* \todo merge both methods
+		*/
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice> x_slice, std::vector<Slice> v_slice, int pos);
 		/**
-		* \brief It returns the current number of subintervals.
+		* \brief Getter for the number of subintervals.
+		*
+		* \return The current number of subintervals
 		*/
 		double get_scid();
 		/**
-		*  \brief It returns the current relative precision.
+		*  \brief Getter for the relative precision.
+		*
+		*  \return The current relative precision for the contractors fixpoint.
 		*/
 		double get_prec();
 		/**
-		* \brief It returns the current propagation engine type. 0: atomic (simple),
-		*  1: complete (stronger, but slower)
+		* \brief Getter for the propagation engine type.
+		*
+		* \return 0 for atomic (simple), 1: complete (stronger, but slower)
 		*/
 		int get_propagation_engine();
 		/**
-		* \brief Changes the current number of subintervals.
-		* \param scid number of subintervals. Must be an integer
+		* \brief Setter for the number of subintervals.
+		* \param scid number of subintervals. Must be a positive integer
 		*/
 		void set_scid(int scid);
 		/**
-		* \brief Changes the propagation engine.
+		* \brief Setter for the propagation engine.
 		* \param engine can be either 0 (simple) or 1 (full)
 		*/
 		void set_propagation_engine(int engine);
-		/*
-		* \brief Changes the value of the relative precision.
+		/**
+		* \brief Setter for the relative precision.
 		* \param prec the precision.
 		*/
 		void set_prec(double prec);
-		/*
+		/**
 		* \brief It Contract the domains of $x$ by using an AC-3 like propagation algorithm.
 		*
 		* \param x_slice the slices of x.
 		* \param v_slice the slices of v.
 		* \param t_propa temporal way of propagation, either forward or backward.
 		*
-		* todo: use Simon's CN propagation.
+		* \todo Use Simon's CN propagation.
 		*/
 		void FullPropagationEngine(std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, TimePropag t_propa);
-		/*
+		/**
 		* \brief It Contract the domains of $x$ by using iteratively \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$
 		*
 		* \param x_slice the slices of x.

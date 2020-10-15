@@ -16,7 +16,7 @@
 namespace tubex
 {
 
-	/*
+	/**
 	* \class CtcCidGuess
 	* \brief \f$\mathcal{C}_{CidGuess}\f$ contracts a tube \f$[x](\cdot)\f$ using the contractors
 	* \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$ at the Slice level.
@@ -48,11 +48,17 @@ namespace tubex
 		* \brief ctc_fwd manages to make an evaluation of the current Slices in order to
 		* contract and update v
 		*
-		* todo: merge both methods, perhaps add it to CtcIntegration?
+		* todo merge both methods, perhaps add it to CtcIntegration?
 		*/
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, int pos);
+		/**
+		* \brief ctc_fwd manages to make an evaluation of the current Slices in order to
+		* contract and update v
+		*
+		* todo merge both methods, perhaps add it to CtcIntegration?
+		*/
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice> x_slice, std::vector<Slice> v_slice, int pos);
-		/*
+		/**
 		* \brief For each dimension it creates 2 puntual subintervals (the bounds) to be treated
 		*
 		* \param x_slice the slice to be treated
@@ -61,103 +67,116 @@ namespace tubex
 		*/
 		void create_bounds(Slice & x_slice, std::vector<ibex::Interval> & slices, TimePropag t_propa);
 		/**
-		* \brief ctc_fwd manages to make an evaluation of the current Slices in order to
-		* contract and update v
+		* \brief This method tries to remove a subinterval using the constraint graph
 		*
-		* todo: merge both methods
+		* \param to_remove interval to be forced
+		* \param bound 0: if it is an upper bound , 1: lower bound of the interval
+		* \param pos the dimension
+		* \param x_slice the current set of slices
+		* \param v_slice the current evaluation of the slices
+		* \param tt_propa temporal way of propagation, either forward or backward.
 		*/
-		void var3Bcheck(ibex::Interval remove_ub,int bound, int pos ,std::vector<Slice*> & x_slice,std::vector<Slice*> v_slice,TimePropag t_propa);
-		/*
-		* \brief It Contract the domains of $x$ by using an AC-3 like propagation algorithm.
+		void var3Bcheck(ibex::Interval to_remove,int bound, int pos ,std::vector<Slice*> & x_slice,std::vector<Slice*> v_slice,TimePropag t_propa);
+		/**
+		* \brief It Contract the domains of x by using an AC-3 like propagation algorithm.
 		*
 		* \param x_slice the slices of x.
 		* \param v_slice the slices of v.
 		* \param t_propa temporal way of propagation, either forward or backward.
 		*
-		* todo: use Simon's CN propagation.
+		* todo Use Simon's CN propagation?.
 		*/
 		void FullPropagationEngine(std::vector<Slice> & x_slice, std::vector<Slice> & v_slice, TimePropag t_propa);
-		/*
-		* \brief It Contract the domains of $x$ by using iteratively \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$
+		/**
+		* \brief It Contract the domains of x by using iteratively \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$
 		*
 		* \param x_slice the slices of x.
 		* \param v_slice the slices of v.
 		* \param t_propa temporal way of propagation, either forward or backward.
 		*/
 		void AtomicPropagationEngine(std::vector<Slice> & x_slice, std::vector<Slice> & v_slice, TimePropag t_propa);
-		/*
-		* \brief It creates $2^n$ points which are used to guess the input (resp. output) gate.
+		/**
+		* \brief It creates \f$2^n\f$ points which are used to guess the input (resp. output) gate.
 		*
 		* \param x_slice the slice to be treated
 		* \param points vector of points (for storing purposes)
 		* \param t_propa temporal way of propagation, either forward or backward.
 		*/
 		void create_corners(std::vector<Slice> x_slices, std::vector< std::vector<double> > & points, TimePropag t_propa);
-		/*
+		/**
 		* \brief Creates the set of all possible combination of points (Cartesian product)
 		* using the bounds of x.
 		*
 		* \param bounds all the bounds of the variables in x
+		*
+		* \return A vector of points (also vectors as can be n dimensional)
 		*/
 		std::vector<std::vector<double>> cart_product (const std::vector<std::vector<double>>& bounds);
 		/**
-		*  \brief It returns the current relative precision.
+		*  \brief Getter of the current relative precision.
+		*
+		*  \return the relative precision
 		*/
 		double get_prec();
 		/**
-		* \brief It returns the current propagation engine type. 0: atomic (simple),
-		*  1: complete (stronger, but slower)
+		* \brief Getter for propagation engine type.
+		*
+		* \return 0: atomic (simple), 1: complete (stronger, but slower)
 		*/
 		int get_propagation_engine();
 		/**
-		*  \brief It returns the maximum number of iterations for the fixpoint. By
-		*  default is $50$
+		*  \brief Getter of the maximum number of iterations for the fixpoint. Default is 50.
+		*
+		*  \return number of iterations
 		*/
 		bool get_max_it();
-		/*
-		* \brief Changes the value of the relative precision.
+		/**
+		* \brief Setter for the relative precision.
 		* \param prec the precision.
 		*/
 		void set_prec(double prec);
 		/**
-		* \brief Changes the propagation engine.
+		* \brief Setter for the propagation engine.
 		* \param engine can be either 0 (simple) or 1 (full)
 		*/
 		void set_propagation_engine(int engine);
 		/**
-		* \brief Changes the maximum number of iterations for the fixpoint.
+		* \brief Setter for the maximum number of iterations in the fixpoint.
+		*
 		* \param max_it number of iterations
 		*/
 		void set_max_it(bool max_it);
 		/**
-		* \brief Set the current strategy for the guess part.
+		* \brief Setter for the subinterval guess.
+		*
 		* \param s_strategy can be either 0 (for bounds) or 1 (for corners)
 		*/
 		void set_s_corn(int s_strategy);
 		/**
-		* \brief Returns the current strategy for the guess part, by default 0 (bounds)
+		* \brief Getter for the subinterval guess.
+		*
+		* \return 0: bounds, 1: corners
 		*/
 		int get_s_corn();
 		/**
-		* \brief Set the current policy for the dichotomy part in the 3BCheck.
-		* \param d_policy: todo
+		* \brief Setter of the current policy for discarding the guess in the 3BCheck.
+		*
+		* \param d_policy can be either 0: no policy, 1: dichotomy
 		*/
 		void set_dpolicy(int d_policy);
 		/**
-		* \brief Returns the current policy for the dichotomy part in the 3BCheck.
+		* \brief Getter of the current policy for the dichotomy part in the 3BCheck.
+		*
+		* \return 0: no policy, 1: dichotomy
 		*/
 		int get_dpolicy();
-		/**
-		*
-		*/
-		void set_variant(int variation);
 
 	private:
 		const TFnc& fnc;
 		double prec;
 		CtcDeriv ctc_deriv;
 		int engine = 0;  //by default the propagation engine is atomic (faster)
-		int s_strategy = 0 ;
+		int s_strategy = 0 ; //by default the propagation engine is atomic (faster)
 		bool max_it = false;
 		int d_policy = 0; // 0: nothing , 1: small , 2:big
 	};

@@ -14,7 +14,7 @@
 
 namespace tubex
 {
-	/*
+	/**
 	* \class CtcBasic
 	* \brief \f$\mathcal{C}_{Basic}\f$ that contracts a tube \f$[x](\cdot)\f$ using the contractors
 	* \f$\mathcal{C}_{\frac{d}{dt}}\f$ and \f$\mathcal{C}\f$ at the Slice level.
@@ -27,7 +27,7 @@ namespace tubex
 		* \brief Creates a contractor object \f$\mathcal{C}_{Basic}\f$
 		*
 		* \param fnc a tubex function
-		* \param prec the relative precision of the method. By default is $0$.
+		* \param prec the relative precision of the method. By default is 0.
 		*/
 		CtcBasic(const TFnc& fnc, double prec = 0.);
 		/**
@@ -49,6 +49,14 @@ namespace tubex
 		void contract(std::vector<Domain*>& v_domains);
 		/**
 		 * \brief ctc_fwd manages to make an evaluation of the current Slices in order to contract and update v
+		 *
+		 * \param x the slice
+		 * \param v the corresponding evaluation
+		 * \param x_slice vector of slices
+		 * \param v_slice vector of evaluations
+		 * \param pos the dimension
+		 *
+		 * \todo remove x and v
 		 */
 		void ctc_fwd(Slice &x, Slice &v, std::vector<Slice*> x_slice, std::vector<Slice*> v_slice, unsigned int pos);
 		/**
@@ -57,6 +65,8 @@ namespace tubex
 		double get_prec();
 		/**
 		 * \brief This method changes the value of the precision.
+		 *
+		 * \param prec the precision
 		 */
 		void set_prec(double prec);
 		/**
@@ -65,6 +75,8 @@ namespace tubex
 		bool get_reasoning_slice();
 		/**
 		 * \brief Sets the contraction strategy.
+		 *
+		 * \param reasoning_slice a boolean that sets if a fixpoint is used for the contractors.
 		 */
 		void set_reasoning_slice(bool reasoning_slice = true);
 
