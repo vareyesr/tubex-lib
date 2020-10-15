@@ -100,6 +100,16 @@
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcEval.cpp
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcDeriv.h
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcDeriv.cpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcBasic.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcBasic.cpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcCid.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcCid.cpp          
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcCidGuess.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcCidGuess.cpp      
+				  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcIntegration.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcIntegration.cpp     
+				  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcExplicitDE.h
+                  ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcExplicitDE.cpp                                      
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcLinobs.h
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/dyn/tubex_CtcLinobs.cpp
                   ${CMAKE_CURRENT_SOURCE_DIR}/contractors/tubex_predef_contractors.cpp

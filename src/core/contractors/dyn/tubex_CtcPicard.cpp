@@ -10,6 +10,8 @@
 
 #include "tubex_CtcPicard.h"
 
+
+
 using namespace std;
 using namespace ibex;
 
@@ -38,7 +40,97 @@ namespace tubex
     x = x_vect[0];
   }
 
+
+  void CtcPicard::set_picard_subslices (int nsubslices)
+  {
+    m_picard_subslices=nsubslices;
+  }
+
+  void CtcPicard::contract_picard_tubeslice(const TFnc& f, TubeVector& x, int & k, TimePropag t_propa )
+  {
+    /*
+          if(!x(k).is_unbounded())
+            continue;
+    */
+
+
+
+          contract_kth_slices(f, x, k, t_propa);
+          // NB: all tube components share the same slicing
+          // If the slice stays unbounded after the contraction step,
+          // then it is sampled and contracted again.
+          if(x(k).is_unbounded() && x[0].slice_tdomain(k).diam() > x.tdomain().diam() / m_picard_subslices)
+          {
+
+            x.sample(x[0].slice_tdomain(k).mid()); // all the components of the tube are sampled,
+            // and sampling time is selected according to the first slice of one of the components,
+            // for instance the first one x[0]
+
+            if (t_propa &  TimePropag::FORWARD) k--; // the first subslice will be computed
+	    else k+=2;  // the second subslice will be computed
+          }
+  }
+
+  void CtcPicard::contract_picard_slice(const TFnc& f, TubeVector& x, int  k, TimePropag t_propa )
+  {
+    assert (t_propa ==   TimePropag::FORWARD || t_propa == TimePropag::BACKWARD);
+
+    for (int i=0 ;i< x.size() ; i++)
+      if ((t_propa == TimePropag::FORWARD && x[i].slice(k)->input_gate().is_unbounded())
+	  ||
+	  (t_propa == TimePropag::BACKWARD && x[i].slice(k)->output_gate().is_unbounded())
+	  )
+	return;
+
+    TubeVector * first_slicing;
+    if (m_preserve_slicing)
+      first_slicing= new TubeVector(x);
+
+    Interval initdomain=x[0].slice_tdomain(k) ;
+    //    Interval initdomain=x[0].domain() ;
+    int kfinished;
+    if (t_propa == TimePropag::FORWARD) kfinished=k+1;
+    else kfinished=k-1;
+
+    while (k!= kfinished){
+          contract_kth_slices(f, x, k, t_propa);
+          // NB: all tube components share the same slicing
+          // If the slice stays unbounded after the contraction step,
+          // then it is sampled and contracted again.
+          if(x(k).is_unbounded())
+	     {
+	       //	       cout << " k " << k << "  nb_slices " <<  x[0].nb_slices() << "  " << x[0].slice_tdomain(k) << " initdomain " <<  initdomain.diam() << " " << initdomain.diam() / m_picard_subslices << endl;
+	       if (x[0].slice_tdomain(k).diam() > initdomain.diam() / m_picard_subslices
+		 && x[0].slice_tdomain(k).mid() < x[0].slice_tdomain(k).ub()
+		   && x[0].slice_tdomain(k).mid() > x[0].slice_tdomain(k).lb())
+		{
+
+		  x.sample(x[0].slice_tdomain(k).mid()); // all the components of the tube are sampled,
+            // and sampling time is selected according to the first slice of one of the components,
+            // for instance the first one x[0]
+
+		  if (t_propa == TimePropag::FORWARD) {kfinished++;} // the first subslice will be computed; the final index incremented
+		  else {k+=1;}  // the second subslice will be computed
+		}
+	      else break;  // fail to bound the current slice : stop the algorithm
+	     }
+	  else if  (t_propa == TimePropag::FORWARD) k++;
+	  else k--;
+    }
+    if(m_preserve_slicing)
+
+      {	first_slicing->set_empty();
+	*first_slicing |= x;
+	x=*first_slicing;
+	delete first_slicing;
+      }
+
+  }
+
+
+
   void CtcPicard::contract(const TFnc& f, TubeVector& x, TimePropag t_propa)
+
   {
     assert(f.nb_vars() == f.image_dim());
     assert(f.nb_vars() == x.size());
@@ -59,29 +151,18 @@ namespace tubex
       if(m_preserve_slicing)
         first_slicing = new TubeVector(x);
 
+
       if(t_propa & TimePropag::FORWARD)
+
       {
-        int nb_slices = x.nb_slices();
 
-        for(int k = 0 ; k < nb_slices ; k++)
+        for(int k = 0 ; k < x.nb_slices() ; k++)
         {
-          if(!x(k).is_unbounded())
-            continue;
 
-          contract_kth_slices(f, x, k, TimePropag::FORWARD);
+	  contract_picard_tubeslice(f,x,k, TimePropag::FORWARD);
 
-          // NB: all tube components share the same slicing
-          // If the slice stays unbounded after the contraction step,
-          // then it is sampled and contracted again.
-          if(x(k).is_unbounded() && x[0].slice_tdomain(k).diam() > x.tdomain().diam() / 500.)
-          {
-            
-            x.sample(x[0].slice_tdomain(k).mid()); // all the components of the tube are sampled,
-            // and sampling time is selected according to the first slice of one of the components,
-            // for instance the first one x[0]
-            nb_slices ++;
-            k --; // the first subslice will be computed
-          }
+
+
         }
       }
 
@@ -89,21 +170,11 @@ namespace tubex
       {
         for(int k = x.nb_slices() - 1 ; k >= 0 ; k--)
         {
-          if(!x(k).is_unbounded())
-            continue;
 
-          contract_kth_slices(f, x, k, TimePropag::BACKWARD);
 
-          // NB: all tube components share the same slicing
-          // If the slice stays unbounded after the contraction step,
-          // then it is sampled and contracted again.
-          if(x(k).is_unbounded() && x[0].slice_tdomain(k).diam() > x.tdomain().diam() / 500.)
-          {
-            x.sample(x[0].slice_tdomain(k).mid()); // all the components of the tube are sampled,
-            // and sampling time is selected according to the first slice of one of the components,
-            // for instance the first one x[0]
-            k += 2; // the second subslice will be computed
-          }
+	  contract_picard_tubeslice(f,x,k, TimePropag::BACKWARD);
+
+
         }
       }
 
@@ -131,14 +202,15 @@ namespace tubex
     assert(f.nb_vars() == f.image_dim());
     assert(f.nb_vars() == tube.size());
     assert(k >= 0 && k < tube.nb_slices());
-
     if(tube.is_empty())
       return;
 
     guess_kth_slices_envelope(f, tube, k, t_propa);
     IntervalVector f_eval = f.eval_vector(k, tube); // computed only once
 
+
     if(t_propa & TimePropag::FORWARD)
+
       for(int i = 0 ; i < tube.size() ; i++)
       {
         Slice *s = tube[i].slice(k);
